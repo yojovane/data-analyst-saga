@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Saga do Analista de Dados: O Mago dos Números</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Muted Greens/Blues for Comfort and Focus (Neuroscience-based) -->
+    <!-- Application Structure Plan: The application is structured with a dynamic main content area. It starts with a "Home" section (hero) and includes a "Criar Avatar" section. The core learning content is presented via an interactive "Mapa dos Reinos" (conceptual map) where each "realm" corresponds to a chapter. Clicking a realm on the map or a week on the timeline (which is now part of the realm's detail view) dynamically updates a content area below, displaying detailed learning objectives, key concepts, mini-project (now "Desafio"), suggested books, and YouTube resources. A "Marcar como Concluído" button and a progress bar track user progress via localStorage. A dedicated "Biblioteca de Referências" modal provides a centralized list of recommended books. This structure was chosen to transform the dense, linear text of the source report into a non-linear, engaging, and explorable quest, aligning with the RPG theme and enhancing user motivation and understanding of the overall learning path. -->
+    <!-- Visualization & Content Choices: 1. Report Info: 25-week curriculum structure. Goal: Organize/Navigate. Viz/Method: Interactive HTML/CSS/JS "Mapa dos Reinos" (conceptual map with clickable "realms") and a timeline within the realm's detail. Interaction: Click on realm/week to display details; visual progress indicator on completed weeks. Justification: Visually represents the learning journey as a "quest," making the plan less intimidating and more engaging than a long text list, with added progress tracking for motivation. 2. Report Info: Breakdown of topics (Python, SQL, etc.). Goal: Inform/Proportions. Viz/Method: Chart.js Donut Chart. Interaction: Hover for tooltips. Justification: Provides a quick, digestible overview of what the course covers. 3. Report Info: Estimated "Pomodoros" per topic. Goal: Compare/Inform. Viz/Method: Chart.js Bar Chart. Interaction: Hover for tooltips. Justification: Helps users understand the relative time commitment for each major skill area. 4. Report Info: Detailed text for each week. Goal: Inform/Elaborate. Viz/Method: Dynamic HTML content blocks with RPG analogies. Interaction: Content appears on-click from the timeline, includes embedded YouTube links and book references. Justification: Breaks down the large volume of text into manageable, on-demand chunks, preventing information overload, and provides direct access to supplementary learning materials, all within the immersive theme. 5. Report Info: Reference books. Goal: Support/Expand. Viz/Method: Modal with HTML list. Interaction: Button to open modal. Justification: Centralizes additional learning resources without cluttering the main page. 6. Report Info: Progress tracking. Goal: Motivate/Track. Viz/Method: HTML/CSS progress bar and "Marcar como Concluído" button. Interaction: Click to update progress, visual feedback on timeline. Justification: Encourages continuous engagement and provides a clear sense of accomplishment. 7. New Feature: Avatar Creation. Goal: Engagement/Personalization. Viz/Method: Canvas drawing with HTML UI controls. Interaction: Select parts to draw avatar, "Salvar" button. Justification: Adds a fun, interactive element that reinforces the RPG theme and personalizes the user's journey. 8. New Feature: Home Page Intro. Goal: Engagement/Onboarding. Viz/Method: HTML/CSS hero section with text and button. Interaction: Click button to start journey. Justification: Provides a welcoming and thematic entry point to the application. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        :root {
+            --color-parchment: #FDF6E3; /* Background */
+            --color-dark-text: #4A4A4A; /* Primary Text */
+            --color-earth-brown: #8B4513; /* Titles, Strong accents */
+            --color-muted-gold: #D4A373; /* Active states, borders */
+            --color-forest-green: #4A7C59; /* Chart elements, buttons, primary options */
+            --color-light-cream: #FEFBF3; /* Content card background */
+            --color-soft-grey: #708090; /* Secondary text, subtle borders */
+            --color-completed-week: #8FBC8F; /* Dark Sea Green for completed weeks */
+            --color-accent-blue: #6A9EBF; /* Muted Blue for secondary options/highlights */
+            --color-orc-green: #5C8D5C; /* A distinct green for "Orc" elements/challenges */
+            --color-dragon-red: #B22222; /* Firebrick for serious challenges/dragons */
+        }
+        body {
+            background-color: var(--color-parchment);
+            font-family: 'Lato', sans-serif;
+            color: var(--color-dark-text);
+            line-height: 1.6;
+        }
+        .font-title {
+            font-family: 'IM Fell English SC', serif;
+        }
+        .active-tab {
+            background-color: var(--color-muted-gold);
+            color: var(--color-parchment);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .timeline-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .timeline-item.active {
+            background-color: var(--color-muted-gold);
+            color: white;
+            transform: scale(1.1);
+        }
+        .timeline-item.completed {
+            background-color: var(--color-completed-week);
+            color: white;
+        }
+        .timeline-item.completed::after {
+            content: '✓';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.75rem;
+            color: var(--color-forest-green);
+            background-color: var(--color-parchment);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-forest-green);
+        }
+        .content-card {
+            background-color: var(--color-light-cream);
+            border-left: 5px solid var(--color-muted-gold);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--color-light-cream);
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 90%;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close-button {
+            color: var(--color-dark-text);
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .progress-bar-container {
+            background-color: var(--color-soft-grey);
+            border-radius: 9999px;
+            height: 1.5rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: var(--color-forest-green);
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+        .hero-section {
+            background-color: var(--color-light-cream);
+            padding: 4rem 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 2rem;
+        }
+        .hero-illustration {
+            width: 120px;
+            height: 120px;
+            background-color: var(--color-muted-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--color-parchment);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-illustration::before {
+            content: '🧙'; /* Unicode icon for wizard */
+            position: absolute;
+            z-index: 1;
+        }
+        .hero-illustration::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            transform: rotate(45deg);
+            top: -20px;
+            left: -20px;
+            filter: blur(5px);
+        }
+
+        .avatar-canvas-container {
+            border: 2px solid var(--color-muted-gold);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            max-width: 300px; /* Limit canvas size */
+            margin: 0 auto;
+        }
+        #avatarCanvas {
+            display: block;
+            background-color: #f0f0f0; /* Light background for canvas */
+        }
+        .option-button {
+            background-color: var(--color-forest-green);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .option-button:hover {
+            background-color: #3E6649; /* Darker green on hover */
+        }
+        .option-button.active-option {
+            background-color: var(--color-accent-blue);
+            box-shadow: 0 0 0 3px var(--color-muted-gold);
+        }
+
+        /* Map specific styles */
+        .map-section-content {
+            position: relative;
+            width: 100%;
+            max-width: 1000px; /* Max width for the map image */
+            margin: 0 auto;
+            background-image: url('https://placehold.co/1000x700/D4A373/FDF6E3?text=Mapa+do+Reino+de+Dambara'); /* Placeholder for the actual map image */
+            background-size: cover;
+            background-position: center;
+            aspect-ratio: 1000 / 700; /* Maintain aspect ratio of the map image */
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .map-realm-hotspot {
+            position: absolute;
+            background-color: rgba(74, 124, 89, 0.6); /* Forest Green with transparency */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 2px solid var(--color-forest-green);
+        }
+        .map-realm-hotspot:hover {
+            background-color: rgba(74, 124, 89, 0.8);
+            transform: scale(1.05);
+        }
+        .map-realm-hotspot.active-realm-hotspot {
+            background-color: var(--color-accent-blue);
+            border-color: var(--color-muted-gold);
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(106, 158, 191, 0.7); /* Blue glow */
+        }
+        .map-realm-hotspot.completed-realm {
+            background-color: rgba(143, 188, 143, 0.7); /* Dark Sea Green completed */
+            border-color: var(--color-completed-week);
+        }
+        .map-realm-hotspot.completed-realm:hover {
+            background-color: rgba(143, 188, 143, 0.9);
+        }
+
+        /* Realm Detail Section */
+        .realm-detail-section {
+            background-color: var(--color-light-cream);
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        .realm-weeks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="font-title text-4xl md:text-6xl text-[var(--color-earth-brown)] mb-2">A Saga do Analista de Dados</h1>
+            <p class="text-lg md:text-xl text-[var(--color-dark-text)]">O Mago dos Números: Uma Crônica da Forja e da Ascensão em Seis Luas.</p>
+            <div class="flex justify-center gap-2 mt-4">
+                <button class="lang-switcher px-3 py-1 rounded-full bg-[var(--color-forest-green)] text-white text-sm" data-lang="pt">PT</button>
+                <button class="lang-switcher px-3 py-1 rounded-full bg-[var(--color-forest-green)] text-white text-sm" data-lang="en">EN</button>
+                <button class="lang-switcher px-3 py-1 rounded-full bg-[var(--color-forest-green)] text-white text-sm" data-lang="es">ES</button>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <nav id="chapter-nav" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                <button class="nav-tab font-title text-sm md:text-base px-4 py-2 rounded-full transition-colors duration-300 text-[var(--color-earth-brown)] hover:bg-[var(--color-muted-gold)] hover:text-[var(--color-parchment)] active-tab" data-section="home">Taberna do Viajante</button>
+                <button class="nav-tab font-title text-sm md:text-base px-4 py-2 rounded-full transition-colors duration-300 text-[var(--color-earth-brown)] hover:bg-[var(--color-muted-gold)] hover:text-[var(--color-parchment)]" data-section="avatar-creator">Forja do Herói</button>
+                <button class="nav-tab font-title text-sm md:text-base px-4 py-2 rounded-full transition-colors duration-300 text-[var(--color-earth-brown)] hover:bg-[var(--color-muted-gold)] hover:text-[var(--color-parchment)]" data-section="progress-section">Diário de Bordo</button>
+                <button class="nav-tab font-title text-sm md:text-base px-4 py-2 rounded-full transition-colors duration-300 text-[var(--color-earth-brown)] hover:bg-[var(--color-muted-gold)] hover:text-[var(--color-parchment)]" data-section="map-section">O Grande Mapa dos Reinos</button>
+                <button class="nav-tab font-title text-sm md:text-base px-4 py-2 rounded-full transition-colors duration-300 text-[var(--color-earth-brown)] hover:bg-[var(--color-muted-gold)] hover:text-[var(--color-parchment)]" data-section="summary-charts-section">Oráculo dos Reinos</button>
+            </nav>
+
+            <!-- Home Section -->
+            <section id="home-section" class="hero-section mb-12">
+                <div class="hero-illustration"></div>
+                <h2 class="font-title text-3xl md:text-5xl text-[var(--color-earth-brown)]" data-key="home_title">Bem-vindo à Cidadela dos Dados!</h2>
+                <p class="text-lg md:text-xl text-[var(--color-dark-text)] max-w-2xl" data-key="home_description">
+                    Em um mundo onde os sussurros dos números guardam segredos e o futuro é moldado pelas percepções, você foi convocado. Esta crônica é o seu guia, uma jornada de seis luas para forjar as habilidades de um Mago dos Dados, desvendando mistérios, automatizando o impossível, e criando maravilhas (ou terrores) que moldarão os reinos.
+                </p>
+                <button id="startJourneyBtn" class="option-button text-lg px-6 py-3 rounded-full" data-key="start_journey_button">
+                    Iniciar Sua Saga
+                </button>
+            </section>
+
+            <!-- Avatar Creator Section -->
+            <section id="avatar-creator-section" class="hidden p-6 bg-[var(--color-light-cream)] rounded-lg shadow-lg mb-12">
+                <h2 class="font-title text-3xl text-center mb-6 text-[var(--color-earth-brown)]" data-key="avatar_title">Forja do Herói!</h2>
+                <p class="text-center mb-8 text-[var(--color-dark-text)]" data-key="avatar_description">Crie seu avatar personalizado para esta épica jornada de aprendizado. Escolha seus traços e prepare-se para a aventura!</p>
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div class="avatar-canvas-container w-full h-[300px] md:h-[400px]">
+                        <canvas id="avatarCanvas" width="250" height="250"></canvas>
+                    </div>
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-bold text-xl mb-3 text-[var(--color-earth-brown)]" data-key="avatar_body_label">Corpo:</h3>
+                            <div id="body-options" class="flex flex-wrap gap-2">
+                                <button class="option-button" data-part="body" data-value="square" data-key="avatar_body_square">Quadrado</button>
+                                <button class="option-button" data-part="body" data-value="circle" data-key="avatar_body_circle">Círculo</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl mb-3 text-[var(--color-earth-brown)]" data-key="avatar_eyes_label">Olhos:</h3>
+                            <div id="eyes-options" class="flex flex-wrap gap-2">
+                                <button class="option-button" data-part="eyes" data-value="dot" data-key="avatar_eyes_dot">Pontos</button>
+                                <button class="option-button" data-part="eyes" data-value="line" data-key="avatar_eyes_line">Linhas</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xl mb-3 text-[var(--color-earth-brown)]" data-key="avatar_mouth_label">Boca:</h3>
+                            <div id="mouth-options" class="flex flex-wrap gap-2">
+                                <button class="option-button" data-part="mouth" data-value="smile" data-key="avatar_mouth_smile">Sorriso</button>
+                                <button class="option-button" data-part="mouth" data-value="straight" data-key="avatar_mouth_straight">Reta</button>
+                            </div>
+                        </div>
+                        <div class="text-center mt-6">
+                            <button id="saveAvatarBtn" class="option-button px-6 py-3" data-key="avatar_save_button">Salvar Avatar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Progress Section -->
+            <section id="progress-section" class="hidden mb-8 p-4 bg-[var(--color-light-cream)] rounded-lg shadow-inner">
+                <h2 class="font-title text-2xl text-center mb-4 text-[var(--color-earth-brown)]" data-key="progress_title">Seu Progresso na Campanha</h2>
+                <div class="progress-bar-container mb-2">
+                    <div id="progressBar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <p id="progressText" class="text-center text-sm text-[var(--color-dark-text)]" data-key="progress_text">0% Concluído (0/25 Semanas)</p>
+                <div class="text-center mt-4">
+                    <button id="openLibraryBtn" class="option-button" data-key="open_library_button">
+                        Biblioteca de Referências
+                    </button>
+                </div>
+            </section>
+
+            <!-- Interactive Map Section -->
+            <section id="map-section" class="hidden mb-8 p-4 bg-[var(--color-light-cream)] rounded-lg shadow-inner">
+                <h2 class="font-title text-2xl text-center mb-4 text-[var(--color-earth-brown)]" data-key="map_title">O Grande Mapa dos Reinos</h2>
+                <p class="text-center mb-6 text-[var(--color-dark-text)]" data-key="map_description">Explore os reinos do conhecimento. Cada território guarda segredos e desafios que forjarão suas habilidades.</p>
+                <div id="map-section-content" class="map-section-content">
+                    <!-- Hotspots will be dynamically loaded here -->
+                </div>
+            </section>
+            
+            <!-- Realm Detail Section (replaces timeline, shows weeks for a chosen realm) -->
+            <section id="realm-detail-section" class="hidden realm-detail-section">
+                <h2 id="realm-detail-title" class="font-title text-3xl mb-4 text-[var(--color-earth-brown)]"></h2>
+                <p id="realm-detail-description" class="mb-6 text-[var(--color-dark-text)]"></p>
+                <h3 class="font-bold text-xl mb-3 text-[var(--color-earth-brown)]" data-key="realm_weeks_title">Desafios do Reino:</h3>
+                <div id="realm-weeks-container" class="realm-weeks-grid">
+                    <!-- Weeks for the selected realm will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Week Details / Content Display Section -->
+            <section id="content-display" class="hidden min-h-[400px] transition-opacity duration-500">
+                <div id="details-container" class="content-card shadow-lg rounded-lg p-6">
+                    <h3 id="week-title" class="font-title text-3xl mb-2 text-[var(--color-earth-brown)]"></h3>
+                    <p id="week-description" class="mb-4 text-[var(--color-dark-text)]"></p>
+                    <div id="week-details" class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-[var(--color-earth-brown)]" data-key="week_concepts_label">Conceitos Chave da Semana:</h4>
+                            <ul id="week-concepts" class="list-disc list-inside text-[var(--color-dark-text)]"></ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-[var(--color-earth-brown)]" data-key="week_tools_label">Arsenal (Ferramentas):</h4>
+                            <p id="week-tools" class="text-[var(--color-dark-text)]"></p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-[var(--color-earth-brown)]" data-key="week_project_label">Desafio da Semana (Mini-Projeto):</h4>
+                            <p id="week-project" class="text-[var(--color-dark-text)]"></p>
+                        </div>
+                        <div id="week-youtube-links-container" style="display: none;">
+                            <h4 class="font-bold text-lg text-[var(--color-earth-brown)]" data-key="week_youtube_label">Pergaminhos Antigos (Recursos em Vídeo):</h4>
+                            <ul id="week-youtube-links" class="list-disc list-inside text-[var(--color-dark-text)]"></ul>
+                        </div>
+                        <div id="week-books-refs-container" style="display: none;">
+                            <h4 class="font-bold text-lg text-[var(--color-earth-brown)]" data-key="week_books_label">Tomos da Sabedoria (Leituras Sugeridas):</h4>
+                            <ul id="week-books-refs" class="list-disc list-inside text-[var(--color-dark-text)]"></ul>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-right">
+                        <button id="markCompleteBtn" class="option-button" data-key="mark_complete_button">
+                            Marcar Desafio Concluído
+                        </button>
+                    </div>
+                </div>
+                 <div id="welcome-message" class="text-center p-8">
+                    <h3 class="font-title text-3xl text-[var(--color-earth-brown)]" data-key="welcome_wizard_title">Bem-vindo, Mago dos Dados!</h3>
+                    <p class="mt-2 text-lg text-[var(--color-dark-text)]" data-key="welcome_wizard_description">Sua saga para dominar os dados começa aqui. Clique em um reino no mapa ou selecione uma semana para desvendar seus segredos e aceitar seus desafios. Que sua magia seja potente!</p>
+                </div>
+            </section>
+
+            <!-- Summary Charts Section -->
+            <section id="summary-charts-section" class="hidden mt-12">
+                <h2 class="font-title text-3xl text-center mb-8 text-[var(--color-earth-brown)]" data-key="oracle_title">Oráculo dos Reinos: Visão Geral da Campanha</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-[var(--color-light-cream)] rounded-lg shadow-lg p-4">
+                        <h3 class="text-center font-bold text-lg mb-2 text-[var(--color-earth-brown)]" data-key="focus_by_domain_chart_title">Foco por Domínio Mágico</h3>
+                         <div class="chart-container">
+                            <canvas id="topicsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-[var(--color-light-cream)] rounded-lg shadow-lg p-4">
+                        <h3 class="text-center font-bold text-lg mb-2 text-[var(--color-earth-brown)]" data-key="arcane_effort_chart_title">Esforço Arcane (Pomodoros)</h3>
+                         <div class="chart-container">
+                            <canvas id="pomodoroChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center mt-12 text-[var(--color-soft-grey)] text-sm">
+            <p data-key="footer_text">Inspirado no Manual de Formação em Análise de Dados e na Crônica da Forja e da Ascensão.</p>
+        </footer>
+    </div>
+
+    <!-- Reference Library Modal -->
+    <div id="libraryModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">&times;</span>
+            <h2 class="font-title text-3xl text-center mb-6 text-[var(--color-earth-brown)]" data-key="library_modal_title">Biblioteca de Referências: Tomos da Sabedoria</h2>
+            <div id="booksList" class="space-y-4">
+                <!-- Books will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            pt: {
+                home_title: "Bem-vindo à Cidadela dos Dados!",
+                home_description: "Em um mundo onde os sussurros dos números guardam segredos e o futuro é moldado pelas percepções, você foi convocado. Esta crônica é o seu guia, uma jornada de seis luas para forjar as habilidades de um Mago dos Dados, desvendando mistérios, automatizando o impossível, e criando maravilhas (ou terrores) que moldarão os reinos.",
+                start_journey_button: "Iniciar Sua Saga",
+                avatar_title: "Forja do Herói!",
+                avatar_description: "Crie seu avatar personalizado para esta épica jornada de aprendizado. Escolha seus traços e prepare-se para a aventura!",
+                avatar_body_label: "Corpo:",
+                avatar_body_square: "Quadrado",
+                avatar_body_circle: "Círculo",
+                avatar_eyes_label: "Olhos:",
+                avatar_eyes_dot: "Pontos",
+                avatar_eyes_line: "Linhas",
+                avatar_mouth_label: "Boca:",
+                avatar_mouth_smile: "Sorriso",
+                avatar_mouth_straight: "Reta",
+                avatar_save_button: "Salvar Avatar",
+                progress_title: "Seu Progresso na Campanha",
+                progress_text: "0% Concluído (0/25 Semanas)",
+                open_library_button: "Biblioteca de Referências",
+                map_title: "O Grande Mapa dos Reinos",
+                map_description: "Explore os reinos do conhecimento. Cada território guarda segredos e desafios que forjarão suas habilidades.",
+                realm_weeks_title: "Desafios do Reino:",
+                week_concepts_label: "Conceitos Chave da Semana:",
+                week_tools_label: "Arsenal (Ferramentas):",
+                week_project_label: "Desafio da Semana (Mini-Projeto):",
+                week_youtube_label: "Pergaminhos Antigos (Recursos em Vídeo):",
+                week_books_label: "Tomos da Sabedoria (Leituras Sugeridas):",
+                mark_complete_button: "Marcar Desafio Concluído",
+                welcome_wizard_title: "Bem-vindo, Mago dos Dados!",
+                welcome_wizard_description: "Sua saga para dominar os dados começa aqui. Clique em um reino no mapa ou selecione uma semana para desvendar seus segredos e aceitar seus desafios. Que sua magia seja potente!",
+                oracle_title: "Oráculo dos Reinos: Visão Geral da Campanha",
+                focus_by_domain_chart_title: "Foco por Domínio Mágico",
+                arcane_effort_chart_title: "Esforço Arcane (Pomodoros)",
+                footer_text: "Inspirado no Manual de Formação em Análise de Dados e na Crônica da Forja e da Ascensão.",
+                library_modal_title: "Biblioteca de Referências: Tomos da Sabedoria",
+                realm_intro_1: "Bem-vindo ao Reino de Pythos, a terra onde a serpente da sabedoria se enrola em torno dos primeiros segredos da programação. Aqui, você aprenderá a língua dos computadores, a forjar suas primeiras lâminas de código e a entender a essência da magia digital. Mas cuidado, os 'Orcs da Sintaxe' e os 'Goblins do Erro' espreitam em cada linha, tentando corromper seus feitiços. Apenas com precisão e paciência você os superará.",
+                realm_intro_2: "Adentre as Terras de Queryland, um domínio vasto de pergaminhos antigos e registros esquecidos. Aqui, você dominará a arte da Escrita Rúnica (SQL) e a Contabilidade Mágica (Excel), aprendendo a invocar informações de vastas bibliotecas de dados e a organizar tesouros caóticos. Os 'Dragões dos Dados Desorganizados' e os 'Imp's da Inconsistência' tentarão obscurecer a verdade, mas sua perícia os revelará.",
+                realm_intro_3: "Chegou às Torres da Visão e Eficiência, onde a magia da Estatística e da Automação é forjada. Aqui, você aprenderá a ler os presságios do futuro nos números, a criar espelhos mágicos (Dashboards) que revelam verdades ocultas e a invocar elementais (scripts) para fazer seu trabalho. Os 'Espectros da Incerteza' e os 'Golems de Requisições Excessivas' são os desafios a serem superados para alcançar a verdadeira maestria.",
+                realm_intro_4: "Explore o Mercado dos Heróis, onde sua reputação é sua maior arma. Neste reino, você aprenderá a exibir suas conquistas no Grande Livro de Registros (GitHub), a tecer sua lenda nos arautos (LinkedIn) e a polir suas obras-primas para o mundo. Os 'Orcs da Desorganização' e os 'Goblins da Irrelevância' tentarão diminuir seu valor, mas sua presença será inegável.",
+                realm_intro_5: "Finalmente, adentre a Grande Arena, o palco onde os maiores Magos dos Dados provam seu valor. Aqui, você enfrentará os 'Dragões da Entrevista', apresentará seu legado (Portfólio Final) e selará seu destino no mercado. A vitória não é apenas técnica, mas a capacidade de convencer os reis e moldar o futuro dos reinos com sua sabedoria."
+            },
+            en: {
+                home_title: "Welcome to the Data Citadel!",
+                home_description: "In a world where the whispers of numbers hold secrets and the future is shaped by insights, you have been summoned. This chronicle is your guide, a six-moon journey to forge the skills of a Data Wizard, unraveling mysteries, automating the impossible, and creating wonders (or terrors) that will shape the realms.",
+                start_journey_button: "Start Your Saga",
+                avatar_title: "Forge Your Hero!",
+                avatar_description: "Create your personalized avatar for this epic learning journey. Choose your traits and prepare for adventure!",
+                avatar_body_label: "Body:",
+                avatar_body_square: "Square",
+                avatar_body_circle: "Circle",
+                avatar_eyes_label: "Eyes:",
+                avatar_eyes_dot: "Dots",
+                avatar_eyes_line: "Lines",
+                avatar_mouth_label: "Mouth:",
+                avatar_mouth_smile: "Smile",
+                avatar_mouth_straight: "Straight",
+                avatar_save_button: "Save Avatar",
+                progress_title: "Your Campaign Progress",
+                progress_text: "0% Completed (0/25 Weeks)",
+                open_library_button: "Reference Library",
+                map_title: "The Grand Map of Realms",
+                map_description: "Explore the realms of knowledge. Each territory holds secrets and challenges that will forge your skills.",
+                realm_weeks_title: "Realm Challenges:",
+                week_concepts_label: "Key Concepts of the Week:",
+                week_tools_label: "Arsenal (Tools):",
+                week_project_label: "Weekly Challenge (Mini-Project):",
+                week_youtube_label: "Ancient Scrolls (Video Resources):",
+                week_books_label: "Tomos of Wisdom (Suggested Readings):",
+                mark_complete_button: "Mark Challenge Complete",
+                welcome_wizard_title: "Welcome, Data Wizard!",
+                welcome_wizard_description: "Your saga to master data begins here. Click on a realm on the map or select a week to uncover its secrets and accept its challenges. May your magic be potent!",
+                oracle_title: "Oracle of the Realms: Campaign Overview",
+                focus_by_domain_chart_title: "Focus by Magical Domain",
+                arcane_effort_chart_title: "Arcane Effort (Pomodoros)",
+                footer_text: "Inspired by the Data Analyst Training Manual and the Chronicle of Forging and Ascension.",
+                library_modal_title: "Reference Library: Tomes of Wisdom",
+                realm_intro_1: "Welcome to the Realm of Pythos, the land where the serpent of wisdom coils around the first secrets of programming. Here, you will learn the language of computers, forge your first blades of code, and understand the essence of digital magic. But beware, the 'Orcs of Syntax' and the 'Goblins of Error' lurk in every line, trying to corrupt your spells. Only with precision and patience will you overcome them.",
+                realm_intro_2: "Enter the Lands of Queryland, a vast domain of ancient scrolls and forgotten records. Here, you will master the art of Runic Writing (SQL) and Magical Accounting (Excel), learning to summon information from vast data libraries and organize chaotic treasures. The 'Dragons of Disorganized Data' and the 'Imps of Inconsistency' will try to obscure the truth, but your skill will reveal it.",
+                realm_intro_3: "You have reached the Towers of Vision and Efficiency, where the magic of Statistics and Automation is forged. Here, you will learn to read the omens of the future in numbers, create magical mirrors (Dashboards) that reveal hidden truths, and summon elementals (scripts) to do your bidding. The 'Specters of Uncertainty' and the 'Golems of Excessive Requests' are the challenges to overcome to achieve true mastery.",
+                realm_intro_4: "Explore the Market of Heroes, where your reputation is your greatest weapon. In this realm, you will learn to display your achievements in the Great Book of Records (GitHub), weave your legend into the heralds (LinkedIn), and polish your masterpieces for the world. The 'Orcs of Disorganization' and the 'Goblins of Irrelevance' will try to diminish your worth, but your presence will be undeniable.",
+                realm_intro_5: "Finally, enter the Grand Arena, the stage where the greatest Data Wizards prove their worth. Here, you will face the 'Dragons of the Interview', present your legacy (Final Portfolio Project) and seal your destiny in the market. Victory is not just technical, but the ability to convince kings and shape the future of realms with your wisdom."
+            },
+            es: {
+                home_title: "¡Bienvenido a la Ciudadela de Datos!",
+                home_description: "En un mundo donde los susurros de los números guardan secretos y el futuro se moldea con percepciones, has sido convocado. Esta crónica es tu guía, un viaje de seis lunas para forjar las habilidades de un Mago de Datos, desentrañando misterios, automatizando lo imposible y creando maravillas (o terrores) que darán forma a los reinos.",
+                start_journey_button: "Iniciar Tu Saga",
+                avatar_title: "¡Forja a Tu Héroe!",
+                avatar_description: "Crea tu avatar personalizado para este épico viaje de aprendizaje. ¡Elige tus rasgos y prepárate para la aventura!",
+                avatar_body_label: "Cuerpo:",
+                avatar_body_square: "Cuadrado",
+                avatar_body_circle: "Círculo",
+                avatar_eyes_label: "Ojos:",
+                avatar_eyes_dot: "Puntos",
+                avatar_eyes_line: "Líneas",
+                avatar_mouth_label: "Boca:",
+                avatar_mouth_smile: "Sonrisa",
+                avatar_mouth_straight: "Recta",
+                avatar_save_button: "Guardar Avatar",
+                progress_title: "Tu Progreso en la Campaña",
+                progress_text: "0% Completado (0/25 Semanas)",
+                open_library_button: "Biblioteca de Referencias",
+                map_title: "El Gran Mapa de los Reinos",
+                map_description: "Explora los reinos del conocimiento. Cada territorio guarda secretos y desafíos que forjarán tus habilidades.",
+                realm_weeks_title: "Desafíos del Reino:",
+                week_concepts_label: "Conceptos Clave de la Semana:",
+                week_tools_label: "Arsenal (Herramientas):",
+                week_project_label: "Desafío Semanal (Mini-Proyecto):",
+                week_youtube_label: "Pergaminos Antiguos (Recursos de Video):",
+                week_books_label: "Tomos de Sabiduría (Lecturas Sugeridas):",
+                mark_complete_button: "Marcar Desafío Completado",
+                welcome_wizard_title: "¡Bienvenido, Mago de Datos!",
+                welcome_wizard_description: "Tu saga para dominar los datos comienza aquí. Haz clic en un reino en el mapa o selecciona una semana para desvelar sus secretos y aceptar sus desafíos. ¡Que tu magia sea potente!",
+                oracle_title: "Oráculo de los Reinos: Resumen de la Campaña",
+                focus_by_domain_chart_title: "Enfoque por Dominio Mágico",
+                arcane_effort_chart_title: "Esfuerzo Arcano (Pomodoros)",
+                footer_text: "Inspirado en el Manual de Formación de Analista de Datos y la Crónica de la Forja y el Ascenso.",
+                library_modal_title: "Biblioteca de Referencias: Tomos de Sabiduría",
+                realm_intro_1: "Bienvenido al Reino de Pythos, la tierra donde la serpiente de la sabiduría se enrosca alrededor de los primeros secretos de la programación. Aquí, aprenderás el lenguaje de las computadoras, forjarás tus primeras espadas de código y comprenderás la esencia de la magia digital. Pero ten cuidado, los 'Orcos de la Sintaxis' y los 'Duendes del Error' acechan en cada línea, intentando corromper tus hechizos. Solo con precisión y paciencia los superarás.",
+                realm_intro_2: "Adéntrate en las Tierras de Queryland, un vasto dominio de antiguos pergaminos y registros olvidados. Aquí, dominarás el arte de la Escritura Rúnica (SQL) y la Contabilidad Mágica (Excel), aprendiendo a invocar información de vastas bibliotecas de datos y a organizar tesoros caóticos. Los 'Dragones de Datos Desorganizados' y los 'Duendes de la Inconsistencia' intentarán oscurecer la verdad, pero tu habilidad la revelará.",
+                realm_intro_3: "Has llegado a las Torres de la Visión y la Eficiencia, donde se forja la magia de la Estadística y la Automatización. Aquí, aprenderás a leer los presagios del futuro en los números, a crear espejos mágicos (Dashboards) que revelan verdades ocultas y a invocar elementales (scripts) para hacer tu voluntad. Los 'Espectros de la Incertidumbre' y los 'Golems de Solicitudes Excesivas' son los desafíos a superar para alcanzar la verdadera maestría.",
+                realm_intro_4: "Explora el Mercado de Héroes, donde tu reputación es tu mayor arma. En este reino, aprenderás a mostrar tus logros en el Gran Libro de Registros (GitHub), a tejer tu leyenda entre los heraldos (LinkedIn) y a pulir tus obras maestras para el mundo. Los 'Orcos de la Desorganización' y los 'Duendes de la Irrelevancia' intentarán disminuir tu valor, pero tu presencia será innegable.",
+                realm_intro_5: "Finalmente, entra en la Gran Arena, el escenario donde los más grandes Magos de Datos demuestran su valía. Aquí, te enfrentarás a los 'Dragones de la Entrevista', presentarás tu legado (Proyecto Final de Portafolio) y sellarás tu destino en el mercado. La victoria no es solo técnica, sino la capacidad de convencer a reyes y dar forma al futuro de los reinos con tu sabiduría."
+            }
+        };
+
+        const journeyData = {
+            pt: [
+                { semana: 1, capitulo: 1, titulo: "Bem-vindo à Análise de Dados: O Chamado do Oráculo", descricao: "A jornada começa. Entenda o que é a análise de dados e seu poder para transformar números em decisões. Este é o seu primeiro passo para se tornar um oráculo dos dados, capaz de desvendar padrões e prever o futuro dos reinos. Você aprenderá a ver o caos dos dados como um mapa de tesouros. Enfrente os primeiros 'Goblins da Desorganização' que tentam obscurecer a verdade dos dados brutos. Lembre-se das palavras do Rei Programador Oka: 'O primeiro passo para dominar um reino é compreender sua geografia, por mais caótica que pareça.'", conceitos_chave: ["Definição de Análise de Dados: A Arte da Vidência Digital", "O papel do Analista Mago: Conselheiro de Reis e Conjurador de Verdades", "Impacto nos negócios: Moldando o Destino dos Reinos", "Ferramentas principais: Seu Arsenal Inicial"], ferramentas: "Nenhuma (Conceitual)", projeto: "Desafio: O Enigma da Taberna Esquecida. Os registros de consumo da Taberna do Dragão Adormecido estão em desordem. Use seus primeiros feitiços de Python para organizar os pergaminhos de vendas, categorizar os tipos de hidromel e calcular qual bebida traz mais ouro ao tesouro. Cuidado com os 'Orcs da Entrada Manual' que deixaram os dados sujos!", youtube_links: [{title: "O que faz um Analista de Dados?", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Carreira em Dados: Primeiros Passos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Storytelling com Dados", author: "Cole Nussbaumer Knaflic"}, {title: "Data Science para Leigos", author: "Lillian Pierson"}] },
+                { semana: 2, capitulo: 1, titulo: "Fundamentos de Python: Forjando o Primeiro Feitiço", descricao: "Forje sua primeira ferramenta: Python. Aprenda a 'falar' a língua dos computadores com variáveis e tipos de dados, como um mago aprendendo seus primeiros encantamentos para manipular a própria essência da realidade digital. Cuidado com os 'Orcs da Sintaxe' que tentam corromper seus feitiços com erros gramaticais. Cada variável é um receptáculo para a sua magia, cada tipo de dado, uma essência a ser compreendida. 'A magia é precisa, jovem acólito', diria Oka.", conceitos_chave: ["Variáveis: Receptáculos de Essência Mágica", "Tipos de Dados (Inteiros, Floats, Strings, Booleanos): As Essências Elementais", "Operadores Aritméticos: As Fórmulas da Criação"], ferramentas: "Python, Jupyter/Colab (Seu Grimório Interativo)", projeto: "Desafio: O Inventário do Alquimista. Crie um script Python que calcula as despesas semanais de um alquimista, armazenando diferentes tipos de ingredientes e poções em variáveis. O objetivo é garantir que o estoque não se esgote e que os custos sejam controlados. Cuidado com os 'Goblins da Inconsistência Numérica'!", youtube_links: [{title: "Python para Iniciantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Variáveis e Tipos de Dados em Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python Crash Course", author: "Eric Matthes"}, {title: "Automate the Boring Stuff with Python", author: "Al Sweigart"}] },
+                { semana: 3, capitulo: 1, titulo: "Fluxo de Controle em Python: As Encruzilhadas do Destino", descricao: "Aprenda a guiar seu código por diferentes caminhos com lógica condicional e a repetir tarefas com laços, como um estrategista movendo tropas pelo tabuleiro de guerra ou um feiticeiro conjurando um feitiço repetidas vezes. Enfrente os 'Orcs da Lógica' que tentarão desviar seus caminhos e os 'Espectros da Repetição Inútil' que buscam desperdiçar sua energia arcana. 'Cada decisão conta, cada repetição forja o poder', sentenciaria Oka.", conceitos_chave: ["Instruções if/elif/else: As Encruzilhadas da Decisão", "Operadores Lógicos: Conectando Verdades", "Laços for e while: Os Ciclos Infinitos e Limitados", "Break e Continue: Interrupções e Saltos no Fluxo"], ferramentas: "Python", projeto: "Desafio: A Classificação dos Tesouros. Crie um script que categoriza itens de tesouro (ouro, prata, gemas) como 'valioso' ou 'comum' com base em seu peso e raridade, somando seus totais. Use laços para processar uma lista de tesouros e condições para a classificação. Cuidado com os 'Goblins da Ambiguidade'!", youtube_links: [{title: "Controle de Fluxo em Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Loops For e While", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Think Python", author: "Allen B. Downey"}, {title: "Python Fluente", author: "Luciano Ramalho"}] },
+                { semana: 4, capitulo: 1, titulo: "Funções e Tratamento de Erros: O Domínio da Magia Pura", descricao: "Crie blocos de código reutilizáveis e aprenda a lidar com os imprevistos (erros) de forma elegante, como um ferreiro que sabe consertar sua lâmina após a batalha ou um curandeiro que remedia as falhas da magia. Os 'Goblins do Erro' são persistentes, mas sua rede de segurança arcana (try-except) os conterá. Funções são como rituais pré-definidos, prontos para serem invocados. 'Um mago sábio antecipa a tempestade', diria Oka.", conceitos_chave: ["Criação de Funções: Rituais Reutilizáveis", "Parâmetros e Retorno: Ingredientes e Resultados Mágicos", "Escopo de Variáveis: Os Limites do Seu Poder", "Try/Except: A Rede de Segurança Arcana"], ferramentas: "Python", projeto: "Desafio: O Ritual de Purificação. Transforme o script de classificação de tesouros em uma função que aceita uma lista de itens e retorna um resumo. Implemente tratamento de erros para lidar com entradas inválidas (ex: peso não numérico).", youtube_links: [{title: "Funções em Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tratamento de Erros com Try/Except", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Effective Python", author: "Brett Slatkin"}, {title: "Clean Code", author: "Robert C. Martin"}] },
+                { semana: 5, capitulo: 1, titulo: "Estruturas de Dados Python: O Inventário do Aventureiro", descricao: "Organize seu tesouro de informações com as estruturas de dados do Python, preparando-se para análises mais complexas, como um aventureiro organizando seu inventário para a próxima masmorra. Cada estrutura (listas, tuplas, dicionários, conjuntos) tem seu propósito mágico e sua forma de armazenar artefatos. 'Um inventário organizado é a chave para a sobrevivência', ensinaria Oka.", conceitos_chave: ["Listas: O Saco Sem Fundo do Aventureiro (Mutável e Ordenado)", "Tuplas: O Contrato Selado (Imutável e Ordenado)", "Dicionários: O Grimório de Nomes e Feitiços (Chave-Valor)", "Conjuntos (Sets): A Coleção de Artefatos Únicos", "Compreensões: A Forja Rápida de Coleções", "Arrays NumPy: As Matrizes de Poder para Cálculos Rápidos", "DataFrames Pandas: O Grande Livro de Contabilidade Inteligente"], ferramentas: "Python, Pandas, NumPy", projeto: "Desafio: O Censo do Povoado. Colete dados fictícios de um pequeno povoado (nome, idade, profissão, bens) e organize-os em diferentes estruturas de dados (lista de dicionários, DataFrame Pandas). Realize operações básicas como filtrar por profissão ou calcular a média de idade.", youtube_links: [{title: "Estruturas de Dados em Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Listas e Dicionários", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Structures and Algorithms in Python", author: "Michael T. Goodrich"}, {title: "Python Data Science Handbook", author: "Jake VanderPlas"}] },
+                { semana: 6, capitulo: 1, titulo: "Desafio: Python em Ação - A Prova da Forja", descricao: "É hora de sua primeira prova de fogo. Use todo o seu conhecimento em Python para analisar um pequeno conjunto de dados do início ao fim, demonstrando sua maestria inicial. O 'Golem de Dados Brutos' aguarda seu comando! Você deve transformá-lo em uma criatura de insights. 'A verdadeira magia reside na aplicação', proclamaria Oka.", conceitos_chave: ["Integração de conceitos: A Sinergia dos Feitiços", "Leitura de arquivo simples: Desvendando Pergaminhos Antigos", "Manipulação de dados básicos: Moldando a Realidade dos Dados"], ferramentas: "Python, Jupyter/Colab", projeto: "Desafio Final do Reino de Pythos: A Crônica do Consumo Familiar. Aprofunde a análise de consumo familiar. Carregue um arquivo CSV de despesas, categorize-as usando lógica condicional, calcule totais por categoria e visualize os padrões de gasto usando print() ou uma biblioteca simples. O relatório final deve ser claro e conciso, como um tratado para a família real.", youtube_links: [{title: "Projeto Prático de Python para Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Manipulação de Dados com Pandas (Básico)", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python for Data Analysis", author: "Wes McKinney"}, {title: "Hands-On Data Analysis with Pandas", "author": "Stefanie Molin"}] },
+                { semana: 7, capitulo: 2, titulo: "Fundamentos de SQL: A Escrita Rúnica dos Bancos de Dados", descricao: "Aprenda a linguagem dos bancos de dados para consultar e extrair informações de vastas bibliotecas de dados, como um escriba consultando os anais do reino ou um necromante invocando informações dos registros mortos. Cuidado com os 'Orcs da Duplicação' que tentam poluir seus resultados! SQL é a chave para os cofres do conhecimento.", conceitos_chave: ["SELECT, FROM, WHERE: As Runas Básicas de Invocação", "GROUP BY: Agrupando as Almas dos Dados", "Funções de Agregação (COUNT, SUM, AVG): A Contagem dos Tesouros"], ferramentas: "SQL (SQLite, seu primeiro Banco de Dados Mágico)", projeto: "Desafio: O Censo do Reino. Usando um banco de dados simulado de habitantes, escreva consultas SQL para contar o número total de cidadãos, somar suas riquezas e calcular a média de idade por profissão. Cuidado para não duplicar os registros!", youtube_links: [{title: "SQL Básico para Iniciantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Cláusulas SELECT e WHERE", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL for Data Analysis", author: "Cathy Chen"}, {title: "Learning SQL", author: "Alan Beaulieu"}] },
+                { semana: 8, capitulo: 2, titulo: "JOINs em SQL: Unindo Destinos e Linhagens", descricao: "Combine informações de diferentes tabelas para criar uma visão unificada e descobrir relações ocultas, como um cartógrafo unindo mapas fragmentados para revelar um continente ou um casamenteiro unindo destinos. Os 'Goblins da Desconexão' tentarão te enganar com dados órfãos, mas seus JOINs serão fortes. 'A força de um reino reside em suas conexões', diria Oka.", conceitos_chave: ["INNER JOIN: A União Perfeita", "LEFT JOIN: A Aliança Abrangente", "RIGHT JOIN: A Perspectiva Invertida"], ferramentas: "SQL", projeto: "Desafio: A Árvore Genealógica das Vendas. Junte tabelas de Clientes e Pedidos para listar o nome de cada cliente ao lado de seus respectivos pedidos. Mostre também clientes que não fizeram pedidos. Cuidado para não criar linhagens falsas!", youtube_links: [{title: "Dominando SQL JOINs", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tipos de JOIN em SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL Cookbook", author: "Anthony Molinaro"}, {title: "SQL Antipatterns", author: "Bill Karwin"}] },
+                { semana: 9, capitulo: 2, titulo: "SQL Avançado: Os Rituais Complexos de Invocação", descricao: "Aprofunde suas habilidades de consulta com subconsultas e funções de janela para análises mais sofisticadas, como um estrategista desvendando os movimentos mais complexos do inimigo ou um vidente que enxerga o passado e o futuro em um único olhar. Cuidado com os 'Espectros da Ineficiência' que tentam consumir seus recursos arcanos com consultas lentas! 'A verdadeira maestria é a eficiência', sentenciaria Oka.", conceitos_chave: ["Subconsultas (Aninhadas): Perguntas Dentro de Perguntas", "Funções de Janela (ROW_NUMBER, RANK): O Olhar do Destino sobre Cada Indivíduo", "CTEs (Common Table Expressions): Blocos de Magia Temporários"], ferramentas: "SQL", projeto: "Desafio: Os Campeões do Comércio. Encontre os clientes cujo gasto total está acima da média de todos os clientes do reino. Use subconsultas para calcular a média e funções de janela para classificar os mercadores mais prósperos. O Rei Oka precisa saber quem são seus maiores contribuintes!", youtube_links: [{title: "Subconsultas em SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Funções de Janela SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "High-Performance SQL", author: "Chris Fehily"}, {title: "SQL Queries for Mere Mortals", author: "Michael J. Hernandez"}] },
+                { semana: 10, capitulo: 2, titulo: "Desafio: Exploração SQL - A Caça ao Tesouro Rúnica", descricao: "Enfrente um banco de dados simulado e use todo o seu arsenal SQL para extrair percepções valiosas de vendas e clientes, como um mercador avaliando os registros de seu comércio para otimizar lucros. O 'Dragão dos Dados Desorganizados' aguarda! Sua missão é domá-lo e revelar seus segredos. 'A verdade está oculta, mas a magia a revela', diria Oka.", conceitos_chave: ["Análise de vendas: Decifrando o Fluxo de Ouro", "Segmentação de clientes: Identificando os Aliados Valiosos", "Exportação de resultados: Entregando o Tratado da Verdade"], ferramentas: "SQL", projeto: "Desafio Final das Terras de Queryland: O Relatório da Guilda dos Mercadores. Realize uma análise completa de um banco de dados de vendas simulado. Use JOINs, GROUP BY, funções de agregação e subconsultas para identificar os produtos mais vendidos, as regiões mais lucrativas e os clientes mais fiéis. Gere um relatório CSV com as principais descobertas para o conselho real. Cuidado com os 'Espectros da Ineficiência' nas suas consultas!", youtube_links: [{title: "Projeto Prático SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Estudo de Caso com SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL Practice Problems", author: "Sylvain Saurel"}, {title: "Practical SQL", author: "Anthony DeBarros"}] },
+                { semana: 11, capitulo: 2, titulo: "Essenciais do Excel: A Contabilidade Mágica do Boticário", descricao: "Domine a ferramenta onipresente. Aprenda fórmulas e funções condicionais para manipulação rápida de dados, como um contador registrando os ganhos e perdas de uma guilda ou um boticário misturando ingredientes com precisão. Os 'Imp's da Inconsistência' tentarão te atrapalhar com valores errados, mas suas fórmulas serão seu escudo. 'Mesmo a magia mais simples requer precisão', sentenciaria Oka.", conceitos_chave: ["Fórmulas (SUM, AVERAGE): Os Cálculos Fundamentais", "Funções (IF, SUMIF, COUNTIF): As Decisões da Planilha", "Referências de Células: O Mapa do Tesouro da Planilha"], ferramentas: "Excel", projeto: "Desafio: O Orçamento do Feiticeiro. Crie uma planilha de orçamento pessoal ou de uma guilda. Use fórmulas para calcular totais e funções IF para sinalizar despesas que excedem um limite mágico. Garanta que o fluxo de ouro seja sempre positivo!", youtube_links: [{title: "Excel para Análise de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Fórmulas Essenciais do Excel", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Excel 2019 Bible", author: "Michael Alexander"}, {title: "Microsoft Excel Data Analysis and Business Modeling", author: "Wayne L. Winston"}] },
+                { semana: 12, capitulo: 2, titulo: "Excel: Power Query & Tabelas Dinâmicas: A Transmutação de Dados", descricao: "Automatize a limpeza de dados com Power Query e resuma informações complexas com Tabelas Dinâmicas, transformando dados brutos em relatórios claros como um escriba organizando pergaminhos caóticos ou um alquimista transmutando chumbo em ouro. Cuidado com os 'Orcs da Sujeira' que poluem seus dados! Power Query é sua ferramenta de purificação, Tabelas Dinâmicas, seu espelho da verdade. 'A pureza dos dados é a pureza do insight', proclamaria Oka.", conceitos_chave: ["Power Query (Obter e Transformar): A Forja da Limpeza de Dados", "Tabelas Dinâmicas: O Espelho da Verdade Resumida", "Segmentação de Dados (Slicers): O Filtro Mágico"], ferramentas: "Excel", projeto: "Desafio Final do Reino de Queryland: O Painel da Guilda dos Aventureiros. Importe dados sujos de missões (recompensas, membros, tipos de monstros) para o Excel. Use Power Query para limpar e transformar os dados (remover duplicatas, corrigir formatos). Crie tabelas dinâmicas para resumir as recompensas por tipo de missão e por membro. Desenvolva um painel simples com gráficos e segmentações de dados para que o líder da guilda possa analisar o desempenho dos aventureiros.", youtube_links: [{title: "Introdução ao Power Query", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tabelas Dinâmicas no Excel", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "M Is for (Data) Monkey", author: "Ken Puls & Miguel Escobar"}, {title: "Power Pivot and Power BI", author: "Rob Collie & Avichal Singh"}] },
+                { semana: 13, capitulo: 3, titulo: "Pensamento Estatístico: O Oráculo dos Presságios", descricao: "Vá além dos números. Aprenda os fundamentos da estatística para descrever dados e fazer inferências com confiança, como um sábio decifrando os presságios do futuro ou um profeta interpretando os sinais dos deuses. Os 'Espectros da Incerteza' são traiçoeiros, mas a estatística é sua luz. 'O futuro é um rio de probabilidades, e você aprenderá a lê-lo', diria Oka.", conceitos_chave: ["Média, Mediana, Moda: As Tendências Centrais do Destino", "Desvio Padrão e Variância: A Dispersão da Magia", "Distribuição Normal: O Padrão Universal"], ferramentas: "Conceitual", projeto: "Desafio: A Profecia dos Dados. Dada uma série de dados históricos (ex: o número de monstros avistados por dia), calcule a média, mediana, moda, desvio padrão e variância. Interprete o que esses números significam para a segurança do reino. Comece a prever o futuro!", youtube_links: [{title: "Estatística Descritiva Simplificada", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Fundamentos de Estatística", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Estatística Básica", author: "Morettin & Bussab"}, {title: "Naked Statistics", author: "Charles Wheelan"}] },
+                { semana: 14, capitulo: 3, titulo: "Correlação e Regressão: Os Fios Ocultos do Destino", descricao: "Entenda como as variáveis se relacionam e aprenda a prever resultados com base em dados históricos, como um vidente que enxerga as conexões entre eventos passados e futuros, ou um arquiteto que prevê o colapso de uma estrutura. Os 'Gárgulas da Causalidade Falsa' são enganosos, tentando fazer você ver conexões onde não existem. 'Nem toda conexão é um elo de destino', alertaria Oka.", conceitos_chave: ["Correlação vs. Causalidade: O Dilema do Oráculo", "Gráficos de Dispersão: Visualizando os Fios", "Regressão Linear Simples: Prevendo o Caminho Único"], ferramentas: "Python com Scikit-learn (básico)", projeto: "Desafio: A Previsão da Colheita. Analise a correlação entre a quantidade de chuva e o tamanho da colheita em um reino. Crie um modelo de regressão simples para prever a colheita futura com base na chuva esperada. Identifique se há 'falsas correlações' (ex: número de piratas e aquecimento global).", youtube_links: [{title: "Correlação e Regressão", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Regressão Linear com Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Practical Statistics for Data Scientists", author: "Peter Bruce & Andrew Bruce"}, {title: "An Introduction to Statistical Learning", author: "Gareth James et al."}] },
+                { semana: 15, capitulo: 3, titulo: "Visualização de Dados com Python: A Arte da Iluminação", descricao: "Transforme análises em histórias visuais. Aprenda a criar gráficos impactantes com Matplotlib e Seaborn, como um artista que pinta a verdade em cores vibrantes ou um bardo que narra feitos heroicos com imagens. Os 'Orcs da Poluição Visual' são seus inimigos, tentando obscurecer a mensagem com detalhes desnecessários. 'A clareza é a maior virtude da verdade', ensinaria Oka.", conceitos_chave: ["Gráficos de Barras, Linhas e Pizza: Os Pincéis Essenciais", "Histogramas e Boxplots: Revelando Distribuições Ocultas", "Princípios de design visual: A Estética da Verdade"], ferramentas: "Python, Matplotlib, Seaborn", projeto: "Desafio: O Atlas do Reino. Crie um conjunto de 5 visualizações diferentes (barras, linhas, pizza, dispersão, boxplot) para explorar um conjunto de dados sobre a população de um reino (idade, renda, profissão). Explique as descobertas de cada gráfico, como desenhar um mapa do tesouro com todas as armadilhas e recompensas.", youtube_links: [{title: "Visualização de Dados com Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Matplotlib e Seaborn Tutorial", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Fundamentals of Data Visualization", author: "Claus O. Wilke"}, {title: "The Visual Display of Quantitative Information", author: "Edward Tufte"}] },
+                { semana: 16, capitulo: 3, titulo: "Desafio: Estatística e Visualização - O Confronto com a Desinformação", descricao: "Combine suas habilidades estatísticas e de visualização para conduzir uma análise completa e comunicar suas descobertas, apresentando um relatório que ilumina os mistérios dos dados. O 'Monstro da Desinformação' deve ser derrotado com clareza e precisão! 'Sua verdade é sua arma mais afiada', diria Oka.", conceitos_chave: ["Análise exploratória completa: A Busca pela Verdade", "Comunicação de insights: A Proclamação da Descoberta", "Relatório de análise: O Tratado da Sabedoria"], ferramentas: "Python, Matplotlib, Seaborn", projeto: "Desafio Final das Torres da Visão e Eficiência: A Avaliação da Academia Arcana. Analise um conjunto de dados educacionais (desempenho de alunos, matrículas em escolas). Realize estatísticas descritivas, explore correlações e crie visualizações impactantes para ilustrar tendências (ex: desempenho por disciplina, evolução das matrículas). Desenvolva um relatório básico que apresente as descobertas e as inferências tiradas dos dados para o conselho da Academia.", youtube_links: [{title: "Projeto de Análise Estatística", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Storytelling com Dados na Prática", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Visualization: A Practical Introduction", author: "Kieran Healy"}, {title: "Effective Data Storytelling", author: "Brent Dykes"}] },
+                { semana: 17, capitulo: 3, titulo: "Dashboards Interativos: Os Espelhos da Verdade Dinâmica", descricao: "Construa painéis de controle dinâmicos que permitem aos usuários explorar os dados por conta própria, como um mestre de guilda que oferece uma visão em tempo real de suas operações ou um feiticeiro que conjura um espelho mágico do reino. Os 'Espectros da Sobrecarga de Informação' são um perigo, tentando confundir com muitos detalhes. 'A beleza da magia é sua clareza', ensinaria Oka.", conceitos_chave: ["Princípios de design de dashboard: A Arquitetura do Espelho Mágico", "Power BI / Tableau (Fundamentos): As Ferramentas do Conjurador", "Medidas e Filtros: Os Encantamentos Interativos"], ferramentas: "Power BI ou Tableau", projeto: "Desafio: O Painel do Comandante da Guarda. Crie um dashboard interativo para o comandante da guarda real, mostrando a distribuição de patrulhas, incidentes por área e tempo de resposta. O comandante deve poder filtrar por região e tipo de incidente. Garanta que o painel seja intuitivo e rápido.", youtube_links: [{title: "Introdução ao Power BI", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Primeiro Dashboard no Tableau", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "The Big Book of Dashboards", author: "Steve Wexler et al."}, {title: "Storytelling with Data: Let's Practice!", author: "Cole Nussbaumer Knaflic"}] },
+                { semana: 18, capitulo: 3, titulo: "Automação e APIs: A Invocação de Elementais Digitais", descricao: "Aumente sua eficiência automatizando tarefas repetitivas e aprenda a coletar dados da web usando APIs e Web Scraping, como um batedor que envia corvos mensageiros para coletar informações rapidamente ou um mago que invoca elementais para fazer seu trabalho. Cuidado com os 'Golems de Requisições Excessivas' que podem sobrecarregar os servidores! 'A magia mais potente é aquela que se repete sem esforço', diria Oka.", conceitos_chave: ["Scripts de automação: Rituais Repetitivos", "Requisições HTTP (GET): O Chamado aos Servidores", "JSON: A Linguagem dos Espíritos Digitais", "Web Scraping ético: A Caça ao Tesouro com Respeito"], ferramentas: "Python (Requests, BeautifulSoup)", projeto: "Desafio Final das Torres da Visão e Eficiência: O Oráculo Climático. Crie um script Python que coleta o clima atual de uma cidade (fictícia ou real) usando uma API pública. O script deve ser capaz de rodar automaticamente e registrar as informações em um arquivo. Cuidado para não sobrecarregar a API!", youtube_links: [{title: "Automação com Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Web Scraping para Iniciantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Web Scraping with Python", author: "Ryan Mitchell"}, {title: "Fluent Python", author: "Luciano Ramalho"}] },
+                { semana: 19, capitulo: 4, titulo: "Desafio: Coleta e Automação - O Saque ao Tesouro Digital", descricao: "Sua prova de mestre artesão: construa um pipeline de dados que coleta, limpa e salva informações da web automaticamente, demonstrando sua capacidade de forjar um fluxo contínuo de inteligência. O 'Kraken da Web' guarda os dados, mas sua astúcia o superará! 'Nem todo tesouro está em um baú físico', ensinaria Oka.", conceitos_chave: ["Integração de coleta e limpeza: A Purificação do Saque", "Agendamento de script (conceitual): O Relógio da Invocação Contínua"], ferramentas: "Python (Requests, BeautifulSoup, Pandas)", projeto: "Desafio: A Bolsa de Valores dos Artefatos. Crie um script Python que coleta preços de produtos (artefatos mágicos, poções, armas) de um site de e-commerce fictício ou real (com permissão). O script deve automatizar a coleta e salvar os dados limpos em um CSV. Cuidado com as defesas anti-bot do site!", youtube_links: [{title: "Projeto de Automação de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Coleta de Dados da Web", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python for Data Science For Dummies", author: "John Paul Mueller"}, {title: "Data Wrangling with Python", author: "Jacquie Barker"}] },
+                { semana: 20, capitulo: 4, titulo: "GitHub: Seu Portfólio Profissional - O Livro de Feitos Épicos", descricao: "Aprenda a usar o GitHub não apenas para código, mas como um currículo vivo para exibir seus projetos e habilidades, como um bardo que canta suas próprias façanhas para o mundo ou um cronista que registra suas conquistas em pedra. Os 'Orcs da Desorganização' tentarão esconder seus feitos, mas seu repositório será um farol! 'Sua lenda deve ser acessível a todos', diria Oka.", conceitos_chave: ["Criação de repositórios: Os Tomos de Sua Glória", "Escrita de READMEs eficazes: A Introdução de Sua Saga", "Versionamento com Git (básico): O Registro Imutável de Suas Batalhas"], ferramentas: "Git, GitHub", projeto: "Desafio: A Publicação do Grimório. Crie um repositório GitHub para um de seus projetos anteriores (ex: análise de consumo familiar). Escreva um README.md completo e detalhado, explicando o propósito do projeto, as ferramentas usadas, os desafios superados e os resultados. Inclua capturas de tela se possível.", youtube_links: [{title: "GitHub para Iniciantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Como Criar um Bom README", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Pro Git", author: "Scott Chacon & Ben Straub"}, {title: "The Productive Programmer", author: "Neal Ford"}] },
+                { semana: 21, capitulo: 4, titulo: "LinkedIn e Marca Pessoal: A Proclamação do Arauto", descricao: "Forje sua reputação online. Otimize seu perfil no LinkedIn para atrair recrutadores e conectar-se com a comunidade, como um nobre que constrói alianças estratégicas ou um arauto que proclama sua chegada. Os 'Goblins da Irrelevância' são um risco, mas sua voz será ouvida. 'Sua reputação o precede', ensinaria Oka.", conceitos_chave: ["Otimização de perfil: O Estandarte de Sua Casa", "Produção de conteúdo: As Baladas de Sua Sabedoria", "Networking estratégico: A Força das Alianças"], ferramentas: "LinkedIn", projeto: "Desafio: O Decreto Real. Revise e otimize completamente seu perfil do LinkedIn, garantindo que ele reflita suas novas habilidades de Mago dos Dados. Faça uma postagem técnica sobre um aprendizado recente ou um insight interessante, como enviar um decreto real sobre sua sabedoria para toda a corte.", youtube_links: [{title: "LinkedIn para Carreira em Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Construindo sua Marca Pessoal", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "The 2-Hour Job Search", author: "Steve Dalton"}, {title: "Never Eat Alone", author: "Keith Ferrazzi"}] },
+                { semana: 22, capitulo: 4, titulo: "Reforço do Portfólio: Polindo as Joias da Coroa", descricao: "Refine suas obras-primas. Aprenda a revisitar e melhorar projetos antigos e a comunicá-los de forma eficaz, como um mestre artesão que aprimora suas criações para a exposição real ou um bardo que aprimora suas canções para a corte. Os 'Espectros da Estagnação' devem ser banidos, pois um verdadeiro mestre está sempre evoluindo. 'Um diamante bruto é valioso, mas polido, é inestimável', diria Oka.", conceitos_chave: ["Refatoração de código: A Forja da Elegância", "Melhoria de visualizações: A Iluminação da Verdade", "Comunicação de projetos: A Narrativa do Poder"], ferramentas: "Medium, YouTube (opcional)", projeto: "Desafio Final do Mercado dos Heróis: A Exibição da Grande Obra. Escolha um de seus projetos anteriores e aprimore-o significativamente (refatore o código, melhore as visualizações, adicione mais análises). Em seguida, escreva um artigo curto no Medium ou grave um vídeo de 2 minutos explicando o projeto e suas melhorias, como apresentar sua magia em um festival para atrair patronos.", youtube_links: [{title: "Como Apresentar Projetos de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Dicas para um Portfólio de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Show Your Work!", author: "Austin Kleon"}, {title: "Designing Data Visualizations", author: "Noah Iliinsky & Julie Steele"}] },
+                { semana: 23, capitulo: 5, titulo: "Desafio Final: Projeto de Portfólio Abrangente - A Obra-Prima do Mago", descricao: "A Prova Final. Integre todas as suas habilidades em um projeto abrangente que demonstra sua capacidade como analista de dados, a sua obra-prima que selará seu legado. Invoque um 'Monstro de Dados' (um grande e complexo conjunto de dados) e mostre seu domínio, transformando o caos em ordem e sabedoria. 'Este é o seu momento de ascensão', proclamaria Oka.", conceitos_chave: ["Análise de ponta a ponta: Do Caos à Ordem", "Resolução de problemas complexos: Decifrando os Enigmas Reais", "Apresentação de resultados: O Tratado que Convence Reinos"], ferramentas: "Python, SQL, Power BI/Tableau", projeto: "Desafio Final da Grande Arena: O Tratado da Sabedoria para o Rei. Escolha um grande conjunto de dados público (ex: dados de uma epidemia, padrões de migração de criaturas, economia de um reino). Realize uma análise completa: limpeza, consulta com SQL, análise estatística, visualização com Python e Power BI/Tableau. Culmine com um dashboard interativo e um relatório detalhado no GitHub, como um tratado que convence reinos inteiros a seguir seus conselhos.", youtube_links: [{title: "Projeto de Dados do Zero", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Exemplo de Projeto Final de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Science from Scratch", author: "Joel Grus"}, {title: "The Art of Data Science", author: "Roger D. Peng & Elizabeth Matsui"}] },
+                { semana: 24, capitulo: 5, titulo: "Currículo e Aplicações: O Pergaminho de Apresentação", descricao: "Prepare seus documentos de guerra. Crie um currículo técnico que passe pelos guardiões (ATS) e chame a atenção dos lordes e damas do mercado, como um pergaminho de apresentação impecável para a corte real. Os 'Guardiões do Recrutamento' são implacáveis, mas seu pergaminho será um farol de suas habilidades. 'A primeira impressão é um feitiço poderoso', ensinaria Oka.", conceitos_chave: ["Currículo técnico (ATS friendly): O Mapa de Suas Conquistas", "Carta de apresentação: A Proclamação de Sua Intenção", "Estratégias de aplicação: A Tática da Infiltração"], ferramentas: "Editor de texto", projeto: "Desafio: O Pergaminho Otimizado. Crie um currículo de uma página otimizado para uma vaga de Analista de Dados real ou fictícia. Adapte-o para passar por sistemas de rastreamento de candidatos (ATS) e inclua links para seu GitHub e LinkedIn. Escreva uma carta de apresentação concisa e impactante.", youtube_links: [{title: "Como Fazer um Currículo de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Dicas para Carta de Apresentação", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Cracking the PM Interview", author: "Gayle Laakmann McDowell"}, {title: "The Google Resume", author: "Gayle Laakmann McDowell"}] },
+                { semana: 25, capitulo: 5, titulo: "Entrevistas e Além: O Duelo Final pela Maestria", descricao: "Prepare-se para o desafio final: a entrevista. Aprenda a demonstrar suas habilidades técnicas e comportamentais, como um campeão defendendo sua honra na corte ou um mago provando sua maestria em um duelo. Os 'Dragões da Entrevista' esperam, mas sua eloquência e conhecimento serão suas armas. 'A vitória final é a sua voz', proclamaria Oka.", conceitos_chave: ["Entrevista técnica (case): O Enigma do Dragão", "Entrevista comportamental (STAR): A Crônica de Suas Virtudes", "Explicação de projetos: A Narrativa de Suas Conquistas"], ferramentas: "Nenhuma (Prática)", projeto: "Desafio Final da Grande Arena: O Duelo com o Dragão. Grave a si mesmo respondendo a 3 perguntas comuns de entrevista (uma técnica de caso prático, uma comportamental usando o método STAR e uma sobre a explicação de um de seus projetos). Analise sua performance e identifique pontos de melhoria para o seu próximo duelo.", youtube_links: [{title: "Preparação para Entrevista de Dados", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Perguntas Comportamentais em Entrevistas", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Ace the Data Science Interview", author: "Nick Singh & Kevin Huo"}, {title: "Case Interview Secrets", author: "Victor Cheng"}] }
+            ],
+            en: [
+                { semana: 1, capitulo: 1, titulo: "Welcome to Data Analysis: The Oracle's Call", descricao: "The journey begins. Understand what data analysis is and its power to transform numbers into decisions. This is your first step to becoming a data oracle, capable of unraveling patterns and predicting the future of realms. You will learn to see the chaos of data as a treasure map. Face the first 'Goblins of Disorganization' who try to obscure the truth of raw data. Remember the words of Programmer King Oka: 'The first step to mastering a realm is to understand its geography, no matter how chaotic it may seem.'", conceitos_chave: ["Definition of Data Analysis: The Art of Digital Clairvoyance", "The Role of the Data Wizard: Advisor to Kings and Conjurer of Truths", "Impact on Business: Shaping the Destiny of Realms", "Key Tools: Your Initial Arsenal"], ferramentas: "None (Conceptual)", projeto: "Challenge: The Enigma of the Forgotten Tavern. The consumption records of the Sleeping Dragon Tavern are in disarray. Use your first Python spells to organize the sales scrolls, categorize the types of mead, and calculate which drink brings the most gold to the treasury. Beware of the 'Orcs of Manual Entry' who left the data messy!", youtube_links: [{title: "What does a Data Analyst do?", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Data Career: First Steps", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Storytelling with Data", author: "Cole Nussbaumer Knaflic"}, {title: "Data Science for Dummies", author: "Lillian Pierson"}] },
+                { semana: 2, capitulo: 1, titulo: "Python Fundamentals: Forging the First Spell", descricao: "Forge your first tool: Python. Learn to 'speak' the language of computers with variables and data types, like a wizard learning their first enchantments to manipulate the very essence of digital reality. Beware of the 'Orcs of Syntax' who try to corrupt your spells with grammatical errors. Each variable is a receptacle for your magic, each data type, an essence to be understood. 'Magic is precise, young acolyte,' Oka would say.", conceitos_chave: ["Variables: Receptacles of Magical Essence", "Data Types (Integers, Floats, Strings, Booleans): The Elemental Essences", "Arithmetic Operators: The Formulas of Creation"], ferramentas: "Python, Jupyter/Colab (Your Interactive Grimoire)", projeto: "Challenge: The Alchemist's Inventory. Create a Python script that calculates an alchemist's weekly expenses, storing different types of ingredients and potions in variables. The goal is to ensure stock doesn't run out and costs are controlled. Beware of the 'Goblins of Numerical Inconsistency'!", youtube_links: [{title: "Python for Beginners", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Variables and Data Types in Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python Crash Course", author: "Eric Matthes"}, {title: "Automate the Boring Stuff with Python", author: "Al Sweigart"}] },
+                { semana: 3, capitulo: 1, titulo: "Control Flow in Python: The Crossroads of Fate", descricao: "Learn to guide your code through different paths with conditional logic and repeat tasks with loops, like a strategist moving troops across the war table or a sorcerer casting a spell repeatedly. Face the 'Orcs of Logic' who will try to divert your paths and the 'Specters of Useless Repetition' who seek to waste your arcane energy. 'Every decision counts, every repetition forges power,' Oka would declare.", conceitos_chave: ["If/Elif/Else Statements: The Crossroads of Decision", "Logical Operators: Connecting Truths", "For and While Loops: The Infinite and Limited Cycles", "Break and Continue: Interruptions and Jumps in Flow"], ferramentas: "Python", projeto: "Challenge: The Treasure Classification. Create a script that categorizes treasure items (gold, silver, gems) as 'valuable' or 'common' based on their weight and rarity, summing their totals. Use loops to process a list of treasures and conditions for classification. Beware of the 'Goblins of Ambiguity'!", youtube_links: [{title: "Control Flow in Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "For and While Loops", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Think Python", author: "Allen B. Downey"}, {title: "Fluent Python", author: "Luciano Ramalho"}] },
+                { semana: 4, capitulo: 1, titulo: "Functions and Error Handling: Mastering Pure Magic", descricao: "Create reusable blocks of code and learn to elegantly handle unforeseen events (errors), like a blacksmith who knows how to mend his blade after battle or a healer who remedies magical failures. The 'Goblins of Error' are persistent, but your arcane safety net (try-except) will contain them. Functions are like predefined rituals, ready to be invoked. 'A wise wizard anticipates the storm,' Oka would say.", conceitos_chave: ["Creating Functions: Reusable Rituals", "Parameters and Return: Magical Ingredients and Results", "Variable Scope: The Limits of Your Power", "Try/Except: The Arcane Safety Net"], ferramentas: "Python", projeto: "Challenge: The Purification Ritual. Transform the treasure classification script into a function that accepts a list of items and returns a summary. Implement error handling to deal with invalid inputs (e.g., non-numeric weight).", youtube_links: [{title: "Functions in Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Error Handling with Try/Except", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Effective Python", author: "Brett Slatkin"}, {title: "Clean Code", author: "Robert C. Martin"}] },
+                { semana: 5, capitulo: 1, titulo: "Python Data Structures: The Adventurer's Inventory", descricao: "Organize your treasure trove of information with Python's data structures, preparing for more complex analyses, like an adventurer organizing their inventory for the next dungeon. Each structure (lists, tuples, dictionaries, sets) has its magical purpose and way of storing artifacts. 'An organized inventory is key to survival,' Oka would teach.", conceitos_chave: ["Lists: The Adventurer's Bottomless Bag (Mutable and Ordered)", "Tuples: The Sealed Contract (Immutable and Ordered)", "Dictionaries: The Grimoire of Names and Spells (Key-Value)", "Sets: The Collection of Unique Artifacts", "Comprehensions: The Quick Forge of Collections", "NumPy Arrays: The Power Matrices for Fast Calculations", "Pandas DataFrames: The Smart Grand Ledger"], ferramentas: "Python, Pandas, NumPy", projeto: "Challenge: The Village Census. Collect fictional data from a small village (name, age, profession, possessions) and organize it into different data structures (list of dictionaries, Pandas DataFrame). Perform basic operations like filtering by profession or calculating the average age.", youtube_links: [{title: "Data Structures in Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Lists and Dictionaries", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Structures and Algorithms in Python", author: "Michael T. Goodrich"}, {title: "Python Data Science Handbook", author: "Jake VanderPlas"}] },
+                { semana: 6, capitulo: 1, titulo: "Challenge: Python in Action - The Forge Trial", descricao: "It's time for your first trial by fire. Use all your Python knowledge to analyze a small dataset from start to finish, demonstrating your initial mastery. The 'Raw Data Golem' awaits your command! You must transform it into a creature of insights. 'True magic lies in application,' Oka would proclaim.", conceitos_chave: ["Concept Integration: The Synergy of Spells", "Simple File Reading: Unraveling Ancient Scrolls", "Basic Data Manipulation: Shaping Data Reality"], ferramentas: "Python, Jupyter/Colab", projeto: "Final Challenge of the Realm of Pythos: The Family Consumption Chronicle. Deepen the family consumption analysis. Load a CSV file of expenses, categorize them using conditional logic, calculate totals by category, and visualize spending patterns using print() or a simple library. The final report should be clear and concise, like a treatise for the royal family.", youtube_links: [{title: "Practical Python Project for Data", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Basic Data Manipulation with Pandas", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python for Data Analysis", author: "Wes McKinney"}, {title: "Hands-On Data Analysis with Pandas", "author": "Stefanie Molin"}] },
+                { semana: 7, capitulo: 2, titulo: "SQL Fundamentals: The Runic Script of Databases", descricao: "Learn the language of databases to query and extract information from vast data libraries, like a scribe consulting the annals of the kingdom or a necromancer summoning information from dead records. Beware of the 'Orcs of Duplication' who try to pollute your results! SQL is the key to the vaults of knowledge.", conceitos_chave: ["SELECT, FROM, WHERE: The Basic Summoning Runes", "GROUP BY: Grouping the Souls of Data", "Aggregation Functions (COUNT, SUM, AVG): Counting the Treasures"], ferramentas: "SQL (SQLite, your first Magical Database)", projeto: "Challenge: The Kingdom's Census. Using a simulated database of inhabitants, write SQL queries to count the total number of citizens, sum their wealth, and calculate the average age by profession. Be careful not to duplicate records!", youtube_links: [{title: "Basic SQL for Beginners", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "SELECT and WHERE Clauses", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL for Data Analysis", author: "Cathy Chen"}, {title: "Learning SQL", author: "Alan Beaulieu"}] },
+                { semana: 8, capitulo: 2, titulo: "JOINs in SQL: Uniting Fates and Lineages", descricao: "Combine information from different tables to create a unified view and discover hidden relationships, like a cartographer uniting fragmented maps to reveal a continent or a matchmaker uniting destinies. The 'Goblins of Disconnection' will try to trick you with orphaned data, but your JOINs will be strong. 'The strength of a kingdom lies in its connections,' Oka would say.", conceitos_chave: ["INNER JOIN: The Perfect Union", "LEFT JOIN: The Comprehensive Alliance", "RIGHT JOIN: The Inverted Perspective"], ferramentas: "SQL", projeto: "Challenge: The Sales Family Tree. Join Customer and Order tables to list each customer's name next to their respective orders. Also show customers who have not placed orders. Be careful not to create false lineages!", youtube_links: [{title: "Mastering SQL JOINs", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Types of JOINs in SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL Cookbook", author: "Anthony Molinaro"}, {title: "SQL Antipatterns", author: "Bill Karwin"}] },
+                { semana: 9, capitulo: 2, titulo: "Advanced SQL: Complex Summoning Rituals", descricao: "Deepen your query skills with subqueries and window functions for more sophisticated analyses, like a strategist unraveling the enemy's most complex moves or a seer who glimpses past and future in a single glance. Beware of the 'Specters of Inefficiency' who try to consume your arcane resources with slow queries! 'True mastery is efficiency,' Oka would declare.", conceitos_chave: ["Subqueries (Nested): Questions Within Questions", "Window Functions (ROW_NUMBER, RANK): The Gaze of Fate on Each Individual", "CTEs (Common Table Expressions): Temporary Magic Blocks"], ferramentas: "SQL", projeto: "Challenge: The Champions of Commerce. Find customers whose total spending is above the average of all customers in the kingdom. Use subqueries to calculate the average and window functions to rank the most prosperous merchants. King Oka needs to know who his greatest contributors are!", youtube_links: [{title: "Subqueries in SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "SQL Window Functions", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "High-Performance SQL", author: "Chris Fehily"}, {title: "SQL Queries for Mere Mortals", author: "Michael J. Hernandez"}] },
+                { semana: 10, capitulo: 2, titulo: "Challenge: SQL Exploration - The Runic Treasure Hunt", descricao: "Face a simulated database and use your full SQL arsenal to extract valuable insights from sales and customers, like a merchant evaluating their trade records to optimize profits. The 'Dragon of Disorganized Data' awaits! Your mission is to tame it and reveal its secrets. 'Truth is hidden, but magic reveals it,' Oka would say.", conceitos_chave: ["Sales Analysis: Deciphering the Flow of Gold", "Customer Segmentation: Identifying Valuable Allies", "Exporting Results: Delivering the Treaty of Truth"], ferramentas: "SQL", projeto: "Final Challenge of the Lands of Queryland: The Merchant Guild Report. Perform a complete analysis of a simulated sales database. Use JOINs, GROUP BY, aggregation functions, and subqueries to identify top-selling products, most profitable regions, and most loyal customers. Generate a CSV report with key findings for the royal council. Beware of the 'Specters of Inefficiency' in your queries!", youtube_links: [{title: "Practical SQL Project", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "SQL Case Study", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL Practice Problems", author: "Sylvain Saurel"}, {title: "Practical SQL", author: "Anthony DeBarros"}] },
+                { semana: 11, capitulo: 2, titulo: "Excel Essentials: The Alchemist's Magical Accounting", descricao: "Master the ubiquitous tool. Learn formulas and conditional functions for quick data manipulation, like an accountant recording a guild's gains and losses or an apothecary precisely mixing ingredients. The 'Imps of Inconsistency' will try to trip you up with wrong values, but your formulas will be your shield. 'Even the simplest magic requires precision,' Oka would declare.", conceitos_chave: ["Formulas (SUM, AVERAGE): The Fundamental Calculations", "Functions (IF, SUMIF, COUNTIF): The Spreadsheet's Decisions", "Cell References: The Spreadsheet Treasure Map"], ferramentas: "Excel", projeto: "Challenge: The Wizard's Budget. Create a personal or guild budget spreadsheet. Use formulas to calculate totals and IF functions to flag expenses that exceed a magical limit. Ensure the flow of gold is always positive!", youtube_links: [{title: "Excel for Data Analysis", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Essential Excel Formulas", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Excel 2019 Bible", author: "Michael Alexander"}, {title: "Microsoft Excel Data Analysis and Business Modeling", author: "Wayne L. Winston"}] },
+                { semana: 12, capitulo: 2, titulo: "Excel: Power Query & PivotTables: Data Transmutation", descricao: "Automate data cleaning with Power Query and summarize complex information with PivotTables, transforming raw data into clear reports like a scribe organizing chaotic scrolls or an alchemist transmuting lead into gold. Beware of the 'Orcs of Filth' who pollute your data! Power Query is your purification tool, PivotTables, your mirror of truth. 'The purity of data is the purity of insight,' Oka would proclaim.", conceitos_chave: ["Power Query (Get & Transform): The Forge of Data Cleaning", "PivotTables: The Mirror of Summarized Truth", "Slicers: The Magical Filter"], ferramentas: "Excel", projeto: "Final Challenge of the Realm of Queryland: The Adventurers' Guild Dashboard. Import messy quest data (rewards, members, monster types) into Excel. Use Power Query to clean and transform the data (remove duplicates, correct formats). Create PivotTables to summarize rewards by quest type and by member. Develop a simple dashboard with charts and slicers so the guild leader can analyze adventurers' performance.", youtube_links: [{title: "Introduction to Power Query", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "PivotTables in Excel", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "M Is for (Data) Monkey", author: "Ken Puls & Miguel Escobar"}, {title: "Power Pivot and Power BI", author: "Rob Collie & Avichal Singh"}] },
+                { semana: 13, capitulo: 3, titulo: "Statistical Thinking: The Oracle of Omens", descricao: "Go beyond numbers. Learn the fundamentals of statistics to describe data and make inferences with confidence, like a sage deciphering the omens of the future or a prophet interpreting the signs of the gods. The 'Specters of Uncertainty' are treacherous, but statistics is your light. 'The future is a river of probabilities, and you shall learn to read it,' Oka would say.", conceitos_chave: ["Mean, Median, Mode: The Central Tendencies of Fate", "Variance, Standard Deviation: The Dispersion of Magic", "Normal Distribution: The Universal Pattern"], ferramentas: "Conceptual", projeto: "Challenge: The Data Prophecy. Given a series of historical data (e.g., number of monster sightings per day), calculate the mean, median, mode, standard deviation, and variance. Interpret what these numbers mean for the kingdom's safety. Begin to predict the future!", youtube_links: [{title: "Simplified Descriptive Statistics", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Fundamentals of Statistics", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Basic Statistics", author: "Morettin & Bussab"}, {title: "Naked Statistics", author: "Charles Wheelan"}] },
+                { semana: 14, capitulo: 3, titulo: "Correlation and Regression: The Hidden Threads of Fate", descricao: "Understand how variables relate and learn to predict outcomes based on historical data, like a seer who glimpses connections between past and future events, or an architect who predicts a structure's collapse. The 'Gargoyles of False Causality' are deceptive, trying to make you see connections where none exist. 'Not every connection is a thread of destiny,' Oka would warn.", conceitos_chave: ["Correlation vs. Causality: The Oracle's Dilemma", "Scatter Plots: Visualizing the Threads", "Simple Linear Regression: Predicting the Single Path"], ferramentas: "Python with Scikit-learn (basic)", projeto: "Challenge: The Harvest Prediction. Analyze the correlation between rainfall and harvest size in a kingdom. Create a simple regression model to predict future harvest based on expected rainfall. Identify if there are 'false correlations' (e.g., number of pirates and global warming).", youtube_links: [{title: "Correlation and Regression", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Linear Regression with Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Practical Statistics for Data Scientists", author: "Peter Bruce & Andrew Bruce"}, {title: "An Introduction to Statistical Learning", author: "Gareth James et al."}] },
+                { semana: 15, capitulo: 3, titulo: "Data Visualization with Python: The Art of Illumination", descricao: "Transform analyses into visual stories. Learn to create impactful charts with Matplotlib and Seaborn, like an artist painting truth in vibrant colors or a bard narrating heroic deeds with images. The 'Orcs of Visual Pollution' are your enemies, trying to obscure the message with unnecessary details. 'Clarity is truth's greatest virtue,' Oka would teach.", conceitos_chave: ["Bar, Line, and Pie Charts: The Essential Brushes", "Histograms and Box Plots: Revealing Hidden Distributions", "Visual Design Principles: The Aesthetics of Truth"], ferramentas: "Python, Matplotlib, Seaborn", projeto: "Challenge: The Kingdom's Atlas. Create a set of 5 different visualizations (bar, line, pie, scatter, boxplot) to explore a dataset about a kingdom's population (age, income, profession). Explain the findings of each chart, like drawing a treasure map with all the traps and rewards.", youtube_links: [{title: "Data Visualization with Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Matplotlib and Seaborn Tutorial", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Fundamentals of Data Visualization", author: "Claus O. Wilke"}, {title: "The Visual Display of Quantitative Information", author: "Edward Tufte"}] },
+                { semana: 16, capitulo: 3, titulo: "Challenge: Statistics and Visualization - The Confrontation with Misinformation", descricao: "Combine your statistical and visualization skills to conduct a complete analysis and communicate your findings, presenting a report that illuminates the mysteries of data. The 'Monster of Misinformation' must be defeated with clarity and precision! 'Your truth is your sharpest weapon,' Oka would say.", conceitos_chave: ["Complete Exploratory Analysis: The Quest for Truth", "Communicating Insights: The Proclamation of Discovery", "Analysis Report: The Treaty of Wisdom"], ferramentas: "Python, Matplotlib, Seaborn", projeto: "Final Challenge of the Towers of Vision and Efficiency: The Arcane Academy Assessment. Analyze an educational dataset (student performance, school enrollments). Perform descriptive statistics, explore correlations, and create impactful visualizations to illustrate trends (e.g., performance by subject, enrollment evolution). Develop a basic report presenting the findings and inferences drawn from the data for the Academy council.", youtube_links: [{title: "Statistical Analysis Project", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Storytelling with Data in Practice", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Visualization: A Practical Introduction", author: "Kieran Healy"}, {title: "Effective Data Storytelling", author: "Brent Dykes"}] },
+                { semana: 17, capitulo: 3, titulo: "Interactive Dashboards: Mirrors of Dynamic Truth", descricao: "Build dynamic dashboards that allow users to explore data on their own, like a guild master offering a real-time view of their operations or a sorcerer conjuring a magical mirror of the realm. The 'Specters of Information Overload' are a danger, trying to confuse with too many details. 'The beauty of magic is its clarity,' Oka would teach.", conceitos_chave: ["Dashboard Design Principles: The Architecture of the Magic Mirror", "Power BI / Tableau (Fundamentals): The Conjurer's Tools", "Measures and Filters: Interactive Enchantments"], ferramentas: "Power BI or Tableau", projeto: "Challenge: The Guard Commander's Dashboard. Create an interactive dashboard for the royal guard commander, showing patrol distribution, incidents by area, and response time. The commander should be able to filter by region and incident type. Ensure the dashboard is intuitive and fast.", youtube_links: [{title: "Introduction to Power BI", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "First Dashboard in Tableau", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "The Big Book of Dashboards", author: "Steve Wexler et al."}, {title: "Storytelling with Data: Let's Practice!", author: "Cole Nussbaumer Knaflic"}] },
+                { semana: 18, capitulo: 3, titulo: "Automation and APIs: Summoning Digital Elementals", descricao: "Increase your efficiency by automating repetitive tasks and learn to collect data from the web using APIs and Web Scraping, like a scout sending raven messengers to gather information quickly or a wizard summoning elementals to do their bidding. Beware of the 'Golems of Excessive Requests' who can overload servers! 'The most potent magic is that which repeats effortlessly,' Oka would say.", conceitos_chave: ["Automation Scripts: Repetitive Rituals", "HTTP Requests (GET): The Call to Servers", "JSON: The Language of Digital Spirits", "Ethical Web Scraping: The Respectful Treasure Hunt"], ferramentas: "Python (Requests, BeautifulSoup)", projeto: "Final Challenge of the Towers of Vision and Efficiency: The Weather Oracle. Create a Python script that collects the current weather of a city (fictional or real) using a public API. The script should be able to run automatically and log the information to a file. Be careful not to overload the API!", youtube_links: [{title: "Automation with Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Web Scraping for Beginners", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Web Scraping with Python", author: "Ryan Mitchell"}, {title: "Fluent Python", author: "Luciano Ramalho"}] },
+                { semana: 19, capitulo: 4, titulo: "Challenge: Data Collection and Automation - The Digital Treasure Raid", descricao: "Your master artisan's trial: build a data pipeline that collects, cleans, and saves information from the web automatically, demonstrating your ability to forge a continuous flow of intelligence. The 'Web Kraken' guards the data, but your cunning will overcome it! 'Not every treasure is in a physical chest,' Oka would teach.", conceitos_chave: ["Integrating Collection and Cleaning: The Purification of the Loot", "Script Scheduling (Conceptual): The Clock of Continuous Invocation"], ferramentas: "Python (Requests, BeautifulSoup, Pandas)", projeto: "Challenge: The Artifact Stock Exchange. Create a Python script that collects product prices (magical artifacts, potions, weapons) from a fictional or real e-commerce website (with permission). The script should automate collection and save the clean data to a CSV. Beware of the website's anti-bot defenses!", youtube_links: [{title: "Data Automation Project", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Web Data Collection", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python for Data Science For Dummies", author: "John Paul Mueller"}, {title: "Data Wrangling with Python", author: "Jacquie Barker"}] },
+                { semana: 20, capitulo: 4, titulo: "GitHub: Your Professional Portfolio - The Book of Epic Deeds", descricao: "Learn to use GitHub not just for code, but as a living resume to showcase your projects and skills, like a bard singing their own exploits to the world or a chronicler engraving their conquests in stone. The 'Orcs of Disorganization' will try to hide your deeds, but your repository will be a beacon! 'Your legend must be accessible to all,' Oka would say.", conceitos_chave: ["Creating Repositories: The Tomes of Your Glory", "Writing Effective READMEs: The Introduction to Your Saga", "Version Control with Git (Basic): The Immutable Record of Your Battles"], ferramentas: "Git, GitHub", projeto: "Challenge: The Grimoire's Publication. Create a GitHub repository for one of your previous projects (e.g., family consumption analysis). Write a complete and detailed README.md, explaining the project's purpose, tools used, challenges overcome, and results. Include screenshots if possible.", youtube_links: [{title: "GitHub for Beginners", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "How to Create a Good README", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Pro Git", author: "Scott Chacon & Ben Straub"}, {title: "The Productive Programmer", author: "Neal Ford"}] },
+                { semana: 21, capitulo: 4, titulo: "LinkedIn and Personal Brand: The Herald's Proclamation", descricao: "Forge your online reputation. Optimize your LinkedIn profile to attract recruiters and connect with the community, like a noble building strategic alliances or a herald proclaiming their arrival. The 'Goblins of Irrelevance' are a risk, but your voice will be heard. 'Your reputation precedes you,' Oka would teach.", conceitos_chave: ["Profile Optimization: The Banner of Your House", "Content Production: The Ballads of Your Wisdom", "Strategic Networking: The Strength of Alliances"], ferramentas: "LinkedIn", projeto: "Challenge: The Royal Decree. Completely review and optimize your LinkedIn profile, ensuring it reflects your new Data Wizard skills. Make a technical post about a recent learning or an interesting insight, like sending a royal decree about your wisdom to the entire court.", youtube_links: [{title: "LinkedIn for Data Career", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Building Your Personal Brand", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "The 2-Hour Job Search", author: "Steve Dalton"}, {title: "Never Eat Alone", author: "Keith Ferrazzi"}] },
+                { semana: 22, capitulo: 4, titulo: "Portfolio Reinforcement: Polishing the Crown Jewels", descricao: "Refine your masterpieces. Learn to revisit and improve old projects and communicate them effectively, like a master artisan refining their creations for a real exhibition or a bard perfecting their songs for the court. The 'Specters of Stagnation' must be banished, for a true master is always evolving. 'A rough diamond is valuable, but polished, it is priceless,' Oka would say.", conceitos_chave: ["Code Refactoring: The Forge of Elegance", "Visualization Improvement: The Illumination of Truth", "Project Communication: The Narrative of Power"], ferramentas: "Medium, YouTube (optional)", projeto: "Final Challenge of the Market of Heroes: The Grand Work Exhibition. Choose one of your previous projects and significantly improve it (refactor code, enhance visualizations, add more analysis). Then, write a short article on Medium or record a 2-minute video explaining the project and its improvements, like presenting your magic at a festival to attract patrons.", youtube_links: [{title: "How to Present Data Projects", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tips for a Data Portfolio", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Show Your Work!", author: "Austin Kleon"}, {title: "Designing Data Visualizations", author: "Noah Iliinsky & Julie Steele"}] },
+                { semana: 23, capitulo: 5, titulo: "Final Challenge: Comprehensive Portfolio Project - The Wizard's Masterpiece", descricao: "The Final Trial. Integrate all your skills into a comprehensive project that demonstrates your ability as a data analyst, your masterpiece that will seal your legacy. Summon a 'Data Monster' (a large and complex dataset) and show your mastery, transforming chaos into order and wisdom. 'This is your moment of ascension,' Oka would proclaim.", conceitos_chave: ["End-to-End Analysis: From Chaos to Order", "Complex Problem Solving: Deciphering Royal Enigmas", "Presenting Results: The Treaty that Convinces Kingdoms"], ferramentas: "Python, SQL, Power BI/Tableau", projeto: "Final Challenge of the Grand Arena: The Treaty of Wisdom for the King. Choose a large public dataset (e.g., epidemic data, creature migration patterns, kingdom economy). Perform a complete analysis: cleaning, querying with SQL, statistical analysis, visualization with Python and Power BI/Tableau. Culminate with an interactive dashboard and a detailed report on GitHub, like a treatise that convinces entire realms to follow your advice.", youtube_links: [{title: "Data Project from Scratch", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Example Final Data Project", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Data Science from Scratch", author: "Joel Grus"}, {title: "The Art of Data Science", author: "Roger D. Peng & Elizabeth Matsui"}] },
+                { semana: 24, capitulo: 5, titulo: "Resume and Applications: The Scroll of Presentation", descricao: "Prepare your war documents. Create a technical resume that passes the guardians (ATS) and catches the attention of the lords and ladies of the market, like an impeccable presentation scroll for the royal court. The 'Recruitment Guardians' are relentless, but your scroll will be a beacon of your skills. 'First impressions are a powerful spell,' Oka would teach.", conceitos_chave: ["Technical Resume (ATS friendly): The Map of Your Achievements", "Cover Letter: The Proclamation of Your Intent", "Application Strategies: The Tactic of Infiltration"], ferramentas: "Text Editor", projeto: "Challenge: The Optimized Scroll. Create a one-page resume optimized for a real or fictional Data Analyst position. Tailor it to pass Applicant Tracking Systems (ATS) and include links to your GitHub and LinkedIn. Write a concise and impactful cover letter.", youtube_links: [{title: "How to Make a Data Resume", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Cover Letter Tips", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Cracking the PM Interview", author: "Gayle Laakmann McDowell"}, {title: "The Google Resume", author: "Gayle Laakmann McDowell"}] },
+                { semana: 25, capitulo: 5, titulo: "Interviews and Beyond: The Final Duel for Mastery", descricao: "Prepare for the final challenge: the interview. Learn to demonstrate your technical and behavioral skills, like a champion defending their honor in court or a wizard proving their mastery in a duel. The 'Interview Dragons' await, but your eloquence and knowledge will be your weapons. 'The final victory is your voice,' Oka would proclaim.", conceitos_chave: ["Technical Interview (case): The Dragon's Enigma", "Behavioral Interview (STAR): The Chronicle of Your Virtues", "Project Explanation: The Narrative of Your Achievements"], ferramentas: "None (Practice)", projeto: "Final Challenge of the Grand Arena: The Duel with the Dragon. Record yourself answering 3 common interview questions (one technical case, one behavioral using the STAR method, and one explaining one of your projects). Analyze your performance and identify areas for improvement for your next duel.", youtube_links: [{title: "Data Interview Prep", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Behavioral Interview Questions", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Ace the Data Science Interview", author: "Nick Singh & Kevin Huo"}, {title: "Case Interview Secrets", author: "Victor Cheng"}] }
+            ],
+            es: [
+                { semana: 1, capitulo: 1, titulo: "Bienvenido al Análisis de Datos: La Llamada del Oráculo", descripcion: "El viaje comienza. Comprende qué es el análisis de datos y su poder para transformar números en decisiones. Este es tu primer paso para convertirte en un oráculo de datos, capaz de desentrañar patrones y predecir el futuro de los reinos. Aprenderás a ver el caos de los datos como un mapa del tesoro. Enfréntate a los primeros 'Duendes de la Desorganización' que intentan oscurecer la verdad de los datos brutos. Recuerda las palabras del Rey Programador Oka: 'El primer paso para dominar un reino es comprender su geografía, por caótica que parezca.'", conceptos_chave: ["Definición de Análisis de Datos: El Arte de la Clarividencia Digital", "El Papel del Mago de Datos: Consejero de Reyes y Conjurador de Verdades", "Impacto en los Negocios: Moldeando el Destino de los Reinos", "Herramientas Clave: Tu Arsenal Inicial"], herramientas: "Ninguna (Conceptual)", proyecto: "Desafío: El Enigma de la Taberna Olvidada. Los registros de consumo de la Taberna del Dragón Dormido están en desorden. Usa tus primeros hechizos de Python para organizar los pergaminos de ventas, categorizar los tipos de hidromiel y calcular qué bebida aporta más oro al tesoro. ¡Cuidado con los 'Orcos de la Entrada Manual' que dejaron los datos sucios!", youtube_links: [{title: "¿Qué hace un Analista de Datos?", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Carrera en Datos: Primeros Pasos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Storytelling con Datos", author: "Cole Nussbaumer Knaflic"}, {title: "Data Science para Dummies", author: "Lillian Pierson"}] },
+                { semana: 2, capitulo: 1, titulo: "Fundamentos de Python: Forjando el Primer Hechizo", descripcion: "Forja tu primera herramienta: Python. Aprende a 'hablar' el lenguaje de las computadoras con variables y tipos de datos, como un mago aprendiendo sus primeros encantamientos para manipular la esencia misma de la realidad digital. ¡Cuidado con los 'Orcos de la Sintaxis' que intentan corromper tus hechizos con errores gramaticales! Cada variable es un receptáculo para tu magia, cada tipo de dato, una esencia a comprender. 'La magia es precisa, joven acólito', diría Oka.", conceptos_chave: ["Variables: Receptáculos de Esencia Mágica", "Tipos de Datos (Enteros, Flotantes, Cadenas, Booleanos): Las Esencias Elementales", "Operadores Aritméticos: Las Fórmulas de la Creación"], herramientas: "Python, Jupyter/Colab (Tu Grimorio Interactivo)", proyecto: "Desafío: El Inventario del Alquimista. Crea un script de Python que calcule los gastos semanales de un alquimista, almacenando diferentes tipos de ingredientes y pociones en variables. El objetivo es asegurar que el stock no se agote y que los costos estén controlados. ¡Cuidado con los 'Duendes de la Inconsistencia Numérica'!", youtube_links: [{title: "Python para Principiantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Variables y Tipos de Datos en Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python Crash Course", author: "Eric Matthes"}, {title: "Automate the Boring Stuff with Python", author: "Al Sweigart"}] },
+                { semana: 3, capitulo: 1, titulo: "Flujo de Control en Python: Las Encrucijadas del Destino", descripcion: "Aprende a guiar tu código por diferentes caminos con lógica condicional y a repetir tareas con bucles, como un estratega moviendo tropas por el tablero de guerra o un hechicero conjurando un hechizo repetidamente. Enfréntate a los 'Orcos de la Lógica' que intentarán desviar tus caminos y a los 'Espectros de la Repetición Inútil' que buscan desperdiciar tu energía arcana. 'Cada decisión cuenta, cada repetición forja el poder', declararía Oka.", conceptos_chave: ["Sentencias If/Elif/Else: Las Encrucijadas de la Decisión", "Operadores Lógicos: Conectando Verdades", "Bucles For y While: Los Ciclos Infinitos y Limitados", "Break y Continue: Interrupciones y Saltos en el Flujo"], herramientas: "Python", proyecto: "Desafío: La Clasificación de los Tesoros. Crea un script que clasifique los objetos de tesoro (oro, plata, gemas) como 'valiosos' o 'comunes' según su peso y rareza, sumando sus totales. Usa bucles para procesar una lista de tesoros y condiciones para la clasificación. ¡Cuidado con los 'Duendes de la Ambigüedad'!", youtube_links: [{title: "Flujo de Control en Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Bucles For y While", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Think Python", author: "Allen B. Downey"}, {title: "Python Fluido", author: "Luciano Ramalho"}] },
+                { semana: 4, capitulo: 1, titulo: "Funciones y Manejo de Errores: El Dominio de la Magia Pura", descripcion: "Crea bloques de código reutilizables y aprende a manejar elegantemente los eventos imprevistos (errores), como un herrero que sabe cómo reparar su hoja después de la batalla o un sanador que remedia los fallos de la magia. Los 'Duendes del Error' son persistentes, pero tu red de seguridad arcana (try-except) los contendrá. Las funciones son como rituales predefinidos, listos para ser invocados. 'Un mago sabio anticipa la tormenta', diría Oka.", conceptos_chave: ["Creación de Funciones: Rituales Reutilizables", "Parámetros y Retorno: Ingredientes y Resultados Mágicos", "Alcance de Variables: Los Límites de Tu Poder", "Try/Except: La Red de Seguridad Arcana"], herramientas: "Python", proyecto: "Desafío: El Ritual de Purificación. Transforma el script de clasificación de tesoros en una función que acepte una lista de elementos y devuelva un resumen. Implementa el manejo de errores para tratar entradas inválidas (por ejemplo, peso no numérico).", youtube_links: [{title: "Funciones en Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Manejo de Errores con Try/Except", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python Efectivo", author: "Brett Slatkin"}, {title: "Código Limpio", author: "Robert C. Martin"}] },
+                { semana: 5, capitulo: 1, titulo: "Estructuras de Datos Python: El Inventario del Aventurero", descripcion: "Organiza tu tesoro de información con las estructuras de datos de Python, preparándote para análisis más complejos, como un aventurero organizando su inventario para la próxima mazmorra. Cada estructura (listas, tuplas, diccionarios, conjuntos) tiene su propósito mágico y su forma de almacenar artefactos. 'Un inventario organizado es clave para la supervivencia', enseñaría Oka.", conceptos_chave: ["Listas: La Bolsa sin Fondo del Aventurero (Mutable y Ordenada)", "Tuplas: El Contrato Sellado (Inmutable y Ordenada)", "Diccionarios: El Grimorio de Nombres y Hechizos (Clave-Valor)", "Conjuntos (Sets): La Colección de Artefactos Únicos", "Comprensiones: La Forja Rápida de Colecciones", "Matrices NumPy: Las Matrices de Poder para Cálculos Rápidos", "DataFrames Pandas: El Gran Libro de Contabilidad Inteligente"], herramientas: "Python, Pandas, NumPy", proyecto: "Desafío: El Censo del Pueblo. Recopila datos ficticios de un pequeño pueblo (nombre, edad, profesión, bienes) y organízalos en diferentes estructuras de datos (lista de diccionarios, DataFrame de Pandas). Realiza operaciones básicas como filtrar por profesión o calcular la edad promedio.", youtube_links: [{title: "Estructuras de Datos en Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Listas y Diccionarios", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Estructuras de Datos y Algoritmos en Python", author: "Michael T. Goodrich"}, {title: "Manual de Ciencia de Datos con Python", author: "Jake VanderPlas"}] },
+                { semana: 6, capitulo: 1, titulo: "Desafío: Python en Acción - La Prueba de la Forja", descripcion: "Es hora de tu primera prueba de fuego. Usa todo tu conocimiento de Python para analizar un pequeño conjunto de datos de principio a fin, demostrando tu maestría inicial. ¡El 'Gólem de Datos Crudos' espera tu comando! Debes transformarlo en una criatura de percepciones. 'La verdadera magia reside en la aplicación', proclamaría Oka.", conceptos_chave: ["Integración de Conceptos: La Sinergia de los Hechizos", "Lectura Simple de Archivos: Desentrañando Pergaminos Antiguos", "Manipulación Básica de Datos: Dando Forma a la Realidad de los Datos"], herramientas: "Python, Jupyter/Colab", proyecto: "Desafío Final del Reino de Pythos: La Crónica del Consumo Familiar. Profundiza el análisis del consumo familiar. Carga un archivo CSV de gastos, categorízalos usando lógica condicional, calcula los totales por categoría y visualiza los patrones de gasto usando print() o una biblioteca simple. El informe final debe ser claro y conciso, como un tratado para la familia real.", youtube_links: [{title: "Proyecto Práctico de Python para Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Manipulación Básica de Datos con Pandas", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python para Análisis de Datos", author: "Wes McKinney"}, {title: "Análisis de Datos Práctico con Pandas", "author": "Stefanie Molin"}] },
+                { semana: 7, capitulo: 2, titulo: "Fundamentos de SQL: La Escritura Rúnica de las Bases de Datos", descripcion: "Aprende el lenguaje de las bases de datos para consultar y extraer información de vastas bibliotecas de datos, como un escriba consultando los anales del reino o un nigromante invocando información de registros muertos. ¡Cuidado con los 'Orcos de la Duplicación' que intentan contaminar tus resultados! SQL es la clave de las bóvedas del conocimiento.", conceptos_chave: ["SELECT, FROM, WHERE: Las Runas Básicas de Invocación", "GROUP BY: Agrupando las Almas de los Datos", "Funciones de Agregación (COUNT, SUM, AVG): El Conteo de los Tesoros"], herramientas: "SQL (SQLite, tu primera Base de Datos Mágica)", proyecto: "Desafío: El Censo del Reino. Usando una base de datos simulada de habitantes, escribe consultas SQL para contar el número total de ciudadanos, sumar sus riquezas y calcular la edad promedio por profesión. ¡Cuidado de no duplicar los registros!", youtube_links: [{title: "SQL Básico para Principiantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Cláusulas SELECT y WHERE", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL para Análisis de Datos", author: "Cathy Chen"}, {title: "Aprendiendo SQL", author: "Alan Beaulieu"}] },
+                { semana: 8, capitulo: 2, titulo: "JOINs en SQL: Uniendo Destinos y Linajes", descripcion: "Combina información de diferentes tablas para crear una vista unificada y descubrir relaciones ocultas, como un cartógrafo uniendo mapas fragmentados para revelar un continente o un casamentero uniendo destinos. Los 'Duendes de la Desconexión' intentarán engañarte con datos huérfanos, pero tus JOINs serán fuertes. 'La fuerza de un reino reside en sus conexiones', diría Oka.", conceptos_chave: ["INNER JOIN: La Unión Perfecta", "LEFT JOIN: La Alianza Integral", "RIGHT JOIN: La Perspectiva Invertida"], herramientas: "SQL", proyecto: "Desafío: El Árbol Genealógico de las Ventas. Une las tablas de Clientes y Pedidos para listar el nombre de cada cliente junto a sus respectivos pedidos. Muestra también a los clientes que no han realizado pedidos. ¡Cuidado de no crear linajes falsos!", youtube_links: [{title: "Dominando SQL JOINs", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tipos de JOINs en SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Libro de Cocina SQL", author: "Anthony Molinaro"}, {title: "Antipatrones SQL", author: "Bill Karwin"}] },
+                { semana: 9, capitulo: 2, titulo: "SQL Avanzado: Los Rituales Complejos de Invocación", descripcion: "Profundiza tus habilidades de consulta con subconsultas y funciones de ventana para análisis más sofisticados, como un estratega desentrañando los movimientos más complejos del enemigo o un vidente que vislumbra el pasado y el futuro en una sola mirada. ¡Cuidado con los 'Espectros de la Ineficiencia' que intentan consumir tus recursos arcanos con consultas lentas! 'La verdadera maestría es la eficiencia', declararía Oka.", conceptos_chave: ["Subconsultas (Anidadas): Preguntas dentro de Preguntas", "Funciones de Ventana (ROW_NUMBER, RANK): La Mirada del Destino sobre Cada Individuo", "CTEs (Common Table Expressions): Bloques de Magia Temporales"], herramientas: "SQL", proyecto: "Desafío: Los Campeones del Comercio. Encuentra a los clientes cuyo gasto total está por encima del promedio de todos los clientes del reino. Usa subconsultas para calcular el promedio y funciones de ventana para clasificar a los comerciantes más prósperos. ¡El Rey Oka necesita saber quiénes son sus mayores contribuyentes!", youtube_links: [{title: "Subconsultas en SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Funciones de Ventana SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "SQL de Alto Rendimiento", author: "Chris Fehily"}, {title: "Consultas SQL para Mortales", author: "Michael J. Hernandez"}] },
+                { semana: 10, capitulo: 2, titulo: "Desafío: Exploración SQL - La Búsqueda del Tesoro Rúnico", descripcion: "Enfréntate a una base de datos simulada y usa todo tu arsenal SQL para extraer valiosas percepciones de ventas y clientes, como un mercader evaluando sus registros comerciales para optimizar ganancias. ¡El 'Dragón de Datos Desorganizados' te espera! Tu misión es domarlo y revelar sus secretos. 'La verdad está oculta, pero la magia la revela', diría Oka.", conceptos_chave: ["Análisis de Ventas: Descifrando el Flujo de Oro", "Segmentación de Clientes: Identificando Aliados Valiosos", "Exportación de Resultados: Entregando el Tratado de la Verdad"], herramientas: "SQL", proyecto: "Desafío Final de las Tierras de Queryland: El Informe del Gremio de Comerciantes. Realiza un análisis completo de una base de datos de ventas simulada. Usa JOINs, GROUP BY, funciones de agregación y subconsultas para identificar los productos más vendidos, las regiones más rentables y los clientes más leales. Genera un informe CSV con los hallazgos clave para el consejo real. ¡Cuidado con los 'Espectros de la Ineficiencia' en tus consultas!", youtube_links: [{title: "Proyecto Práctico de SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Estudio de Caso con SQL", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Problemas de Práctica de SQL", author: "Sylvain Saurel"}, {title: "SQL Práctico", author: "Anthony DeBarros"}] },
+                { semana: 11, capitulo: 2, titulo: "Esenciales de Excel: La Contabilidad Mágica del Boticario", descripcion: "Domina la herramienta omnipresente. Aprende fórmulas y funciones condicionales para la manipulación rápida de datos, como un contador registrando las ganancias y pérdidas de un gremio o un boticario mezclando ingredientes con precisión. Los 'Duendes de la Inconsistencia' intentarán interponerte valores erróneos, pero tus fórmulas serán tu escudo. 'Incluso la magia más simple requiere precisión', declararía Oka.", conceptos_chave: ["Fórmulas (SUM, AVERAGE): Los Cálculos Fundamentales", "Funciones (IF, SUMIF, COUNTIF): Las Decisiones de la Hoja de Cálculo", "Referencias de Celda: El Mapa del Tesoro de la Hoja de Cálculo"], herramientas: "Excel", proyecto: "Desafío: El Presupuesto del Hechicero. Crea una hoja de cálculo de presupuesto personal o de un gremio. Usa fórmulas para calcular totales y funciones IF para marcar los gastos que exceden un límite mágico. ¡Asegúrate de que el flujo de oro sea siempre positivo!", youtube_links: [{title: "Excel para Análisis de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Fórmulas Esenciales de Excel", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Biblia de Excel 2019", author: "Michael Alexander"}, {title: "Análisis de Datos y Modelado de Negocios con Microsoft Excel", author: "Wayne L. Winston"}] },
+                { semana: 12, capitulo: 2, titulo: "Excel: Power Query y Tablas Dinámicas: La Transmutación de Datos", descripcion: "Automatiza la limpieza de datos con Power Query y resume información compleja con Tablas Dinámicas, transformando datos brutos en informes claros como un escriba organizando pergaminos caóticos o un alquimista transmutando plomo en oro. ¡Cuidado con los 'Orcos de la Suciedad' que contaminan tus datos! Power Query es tu herramienta de purificación, Tablas Dinámicas, tu espejo de la verdad. 'La pureza de los datos es la pureza de la percepción', proclamaría Oka.", conceptos_chave: ["Power Query (Obtener y Transformar): La Forja de la Limpieza de Datos", "Tablas Dinámicas: El Espejo de la Verdad Resumida", "Segmentación de Datos (Slicers): El Filtro Mágico"], herramientas: "Excel", proyecto: "Desafío Final del Reino de Queryland: El Panel del Gremio de Aventureros. Importa datos desordenados de misiones (recompensas, miembros, tipos de monstruos) a Excel. Usa Power Query para limpiar y transformar los datos (eliminar duplicados, corregir formatos). Crea Tablas Dinámicas para resumir las recompensas por tipo de misión y por miembro. Desarrolla un panel simple con gráficos y segmentaciones de datos para que el líder del gremio pueda analizar el rendimiento de los aventureros.", youtube_links: [{title: "Introducción a Power Query", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tablas Dinámicas en Excel", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "M Es para (Datos) Mono", author: "Ken Puls & Miguel Escobar"}, {title: "Power Pivot y Power BI", author: "Rob Collie & Avichal Singh"}] },
+                { semana: 13, capitulo: 3, titulo: "Pensamiento Estadístico: El Oráculo de los Augurios", descripcion: "Ve más allá de los números. Aprende los fundamentos de la estadística para describir datos y hacer inferencias con confianza, como un sabio descifrando los presagios del futuro o un profeta interpretando las señales de los dioses. Los 'Espectros de la Incertidumbre' son traicioneros, pero la estadística es tu luz. 'El futuro es un río de probabilidades, y tú aprenderás a leerlo', diría Oka.", conceptos_chave: ["Media, Mediana, Moda: Las Tendencias Centrales del Destino", "Varianza, Desviación Estándar: La Dispersión de la Magia", "Distribución Normal: El Patrón Universal"], herramientas: "Conceptual", proyecto: "Desafío: La Profecía de los Datos. Dada una serie de datos históricos (por ejemplo, el número de monstruos avistados por día), calcula la media, mediana, moda, desviación estándar y varianza. Interpreta lo que estos números significan para la seguridad del reino. ¡Comienza a predecir el futuro!", youtube_links: [{title: "Estadística Descriptiva Simplificada", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Fundamentos de Estadística", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Estadística Básica", author: "Morettin & Bussab"}, {title: "Estadística Desnuda", author: "Charles Wheelan"}] },
+                { semana: 14, capitulo: 3, titulo: "Correlación y Regresión: Los Hilos Ocultos del Destino", descripcion: "Comprende cómo se relacionan las variables y aprende a predecir resultados basándote en datos históricos, como un vidente que vislumbra conexiones entre eventos pasados y futuros, o un arquitecto que predice el colapso de una estructura. Los 'Gárgolas de la Falsa Causalidad' son engañosos, intentando hacerte ver conexiones donde no existen. 'No toda conexión es un hilo del destino', advertiría Oka.", conceptos_chave: ["Correlación vs. Causalidad: El Dilema del Oráculo", "Gráficos de Dispersión: Visualizando los Hilos", "Regresión Lineal Simple: Prediciendo el Camino Único"], herramientas: "Python con Scikit-learn (básico)", proyecto: "Desafío: La Predicción de la Cosecha. Analiza la correlación entre la cantidad de lluvia y el tamaño de la cosecha en un reino. Crea un modelo de regresión simple para predecir la cosecha futura basándose en la lluvia esperada. Identifica si hay 'falsas correlaciones' (por ejemplo, número de piratas y calentamiento global).", youtube_links: [{title: "Correlación y Regresión", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Regresión Lineal con Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Estadísticas Prácticas para Científicos de Datos", author: "Peter Bruce & Andrew Bruce"}, {title: "Una Introducción al Aprendizaje Estadístico", author: "Gareth James et al."}] },
+                { semana: 15, capitulo: 3, titulo: "Visualización de Datos con Python: El Arte de la Iluminación", descripcion: "Transforma análisis en historias visuales. Aprende a crear gráficos impactantes con Matplotlib y Seaborn, como un artista que pinta la verdad con colores vibrantes o un bardo que narra hazañas heroicas con imágenes. Los 'Orcos de la Contaminación Visual' son tus enemigos, intentando oscurecer el mensaje con detalles innecesarios. 'La claridad es la mayor virtud de la verdad', enseñaría Oka.", conceptos_chave: ["Gráficos de Barras, Líneas y Pastel: Los Pinceles Esenciales", "Histogramas y Box Plots: Revelando Distribuciones Ocultas", "Principios de Diseño Visual: La Estética de la Verdad"], herramientas: "Python, Matplotlib, Seaborn", proyecto: "Desafío: El Atlas del Reino. Crea un conjunto de 5 visualizaciones diferentes (barras, líneas, pastel, dispersión, boxplot) para explorar un conjunto de datos sobre la población de un reino (edad, ingresos, profesión). Explica los hallazgos de cada gráfico, como dibujar un mapa del tesoro con todas las trampas y recompensas.", youtube_links: [{title: "Visualización de Datos con Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Tutorial de Matplotlib y Seaborn", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Fundamentos de la Visualización de Datos", author: "Claus O. Wilke"}, {title: "La Representación Visual de la Información Cuantitativa", author: "Edward Tufte"}] },
+                { semana: 16, capitulo: 3, titulo: "Desafío: Estadística y Visualización - La Confrontación con la Desinformación", descripcion: "Combina tus habilidades estadísticas y de visualización para realizar un análisis completo y comunicar tus hallazgos, presentando un informe que ilumine los misterios de los datos. ¡El 'Monstruo de la Desinformación' debe ser derrotado con claridad y precisión! 'Tu verdad es tu arma más afilada', diría Oka.", conceptos_chave: ["Análisis Exploratorio Completo: La Búsqueda de la Verdad", "Comunicación de Percepciones: La Proclamación del Descubrimiento", "Informe de Análisis: El Tratado de la Sabiduría"], herramientas: "Python, Matplotlib, Seaborn", proyecto: "Desafío Final de las Torres de Visión y Eficiencia: La Evaluación de la Academia Arcana. Analiza un conjunto de datos educativos (rendimiento de estudiantes, matrículas escolares). Realiza estadísticas descriptivas, explora correlaciones y crea visualizaciones impactantes para ilustrar tendencias (por ejemplo, rendimiento por asignatura, evolución de matrículas). Desarrolla un informe básico que presente los hallazgos e inferencias extraídas de los datos para el consejo de la Academia.", youtube_links: [{title: "Proyecto de Análisis Estadístico", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Storytelling con Datos en la Práctica", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Visualización de Datos: Una Introducción Práctica", author: "Kieran Healy"}, {title: "Narración de Datos Efectiva", author: "Brent Dykes"}] },
+                { semana: 17, capitulo: 3, titulo: "Dashboards Interactivos: Espejos de Verdad Dinámica", descripcion: "Construye dashboards dinámicos que permitan a los usuarios explorar datos por sí mismos, como un maestro de gremio que ofrece una vista en tiempo real de sus operaciones o un hechicero que conjura un espejo mágico del reino. Los 'Espectros de la Sobrecarga de Información' son un peligro, intentando confundir con demasiados detalles. 'La belleza de la magia es su claridad', enseñaría Oka.", conceptos_chave: ["Principios de Diseño de Dashboards: La Arquitectura del Espejo Mágico", "Power BI / Tableau (Fundamentos): Las Herramientas del Conjurador", "Medidas y Filtros: Encantamientos Interactivos"], herramientas: "Power BI o Tableau", proyecto: "Desafío: El Dashboard del Comandante de la Guardia. Crea un dashboard interactivo para el comandante de la guardia real, mostrando la distribución de patrullas, incidentes por área y tiempo de respuesta. El comandante debe poder filtrar por región y tipo de incidente. Asegúrate de que el dashboard sea intuitivo y rápido.", youtube_links: [{title: "Introducción a Power BI", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Primer Dashboard en Tableau", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "El Gran Libro de los Dashboards", author: "Steve Wexler et al."}, {title: "Storytelling con Datos: ¡A Practicar!", author: "Cole Nussbaumer Knaflic"}] },
+                { semana: 18, capitulo: 3, titulo: "Automatización y APIs: Invocando Elementales Digitales", descripcion: "Aumenta tu eficiencia automatizando tareas repetitivas y aprende a recopilar datos de la web usando APIs y Web Scraping, como un explorador que envía cuervos mensajeros para recopilar información rápidamente o un mago que invoca elementales para que hagan su voluntad. ¡Cuidado con los 'Golems de Solicitudes Excesivas' que pueden sobrecargar los servidores! 'La magia más potente es la que se repite sin esfuerzo', diría Oka.", conceptos_chave: ["Scripts de Automatización: Rituales Repetitivos", "Solicitudes HTTP (GET): La Llamada a los Servidores", "JSON: El Lenguaje de los Espíritus Digitales", "Web Scraping Ético: La Búsqueda del Tesoro con Respeto"], herramientas: "Python (Requests, BeautifulSoup)", proyecto: "Desafío Final de las Torres de Visión y Eficiencia: El Oráculo Climático. Crea un script de Python que recopile el clima actual de una ciudad (ficticia o real) usando una API pública. El script debe poder ejecutarse automáticamente y registrar la información en un archivo. ¡Ten cuidado de no sobrecargar la API!", youtube_links: [{title: "Automatización con Python", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Web Scraping para Principiantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Web Scraping con Python", author: "Ryan Mitchell"}, {title: "Python Fluido", author: "Luciano Ramalho"}] },
+                { semana: 19, capitulo: 4, titulo: "Desafío: Recopilación y Automatización de Datos - La Incursión al Tesoro Digital", descripcion: "Tu prueba de maestro artesano: construye una tubería de datos que recopile, limpie y guarde información de la web automáticamente, demostrando tu capacidad para forjar un flujo continuo de inteligencia. ¡El 'Kraken de la Web' guarda los datos, pero tu astucia lo superará! 'No todo tesoro está en un cofre físico', enseñaría Oka.", conceptos_chave: ["Integración de Recopilación y Limpieza: La Purificación del Botín", "Programación de Scripts (Conceptual): El Reloj de la Invocación Continua"], herramientas: "Python (Requests, BeautifulSoup, Pandas)", proyecto: "Desafío: La Bolsa de Valores de los Artefactos. Crea un script de Python que recopile precios de productos (artefactos mágicos, pociones, armas) de un sitio web de comercio electrónico ficticio o real (con permiso). El script debe automatizar la recopilación y guardar los datos limpios en un archivo CSV. ¡Cuidado con las defensas anti-bot del sitio web!", youtube_links: [{title: "Proyecto de Automatización de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Recopilación de Datos Web", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Python para Ciencia de Datos para Dummies", author: "John Paul Mueller"}, {title: "Preparación de Datos con Python", author: "Jacquie Barker"}] },
+                { semana: 20, capitulo: 4, titulo: "GitHub: Tu Portafolio Profesional - El Libro de Hazañas Épicas", descripcion: "Aprende a usar GitHub no solo para código, sino como un currículum vitae vivo para mostrar tus proyectos y habilidades, como un bardo cantando sus propias hazañas al mundo o un cronista grabando sus conquistas en piedra. ¡Los 'Orcos de la Desorganización' intentarán ocultar tus hazañas, pero tu repositorio será un faro! 'Tu leyenda debe ser accesible para todos', diría Oka.", conceptos_chave: ["Creación de Repositorios: Los Tomos de Tu Gloria", "Escritura de READMEs Efectivos: La Introducción a Tu Saga", "Control de Versiones con Git (Básico): El Registro Inmutable de Tus Batallas"], herramientas: "Git, GitHub", proyecto: "Desafío: La Publicación del Grimorio. Crea un repositorio de GitHub para uno de tus proyectos anteriores (por ejemplo, análisis de consumo familiar). Escribe un archivo README.md completo y detallado, explicando el propósito del proyecto, las herramientas utilizadas, los desafíos superados y los resultados. Incluye capturas de pantalla si es posible.", youtube_links: [{title: "GitHub para Principiantes", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Cómo Crear un Buen README", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Pro Git", author: "Scott Chacon & Ben Straub"}, {title: "El Programador Productivo", author: "Neal Ford"}] },
+                { semana: 21, capitulo: 4, titulo: "LinkedIn y Marca Personal: La Proclamación del Heraldo", descripcion: "Forja tu reputación en línea. Optimiza tu perfil de LinkedIn para atraer reclutadores y conectar con la comunidad, como un noble construyendo alianzas estratégicas o un heraldo proclamando su llegada. Los 'Duendes de la Irrelevancia' son un riesgo, pero tu voz será escuchada. 'Tu reputación te precede', enseñaría Oka.", conceptos_chave: ["Optimización de Perfil: El Estandarte de Tu Casa", "Producción de Contenido: Las Baladas de Tu Sabiduría", "Networking Estratégico: La Fuerza de las Alianzas"], herramientas: "LinkedIn", proyecto: "Desafío: El Decreto Real. Revisa y optimiza completamente tu perfil de LinkedIn, asegurándote de que refleje tus nuevas habilidades de Mago de Datos. Haz una publicación técnica sobre un aprendizaje reciente o una percepción interesante, como enviar un decreto real sobre tu sabiduría a toda la corte.", youtube_links: [{title: "LinkedIn para Carrera de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Construyendo Tu Marca Personal", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "La Búsqueda de Empleo de 2 Horas", author: "Steve Dalton"}, {title: "Nunca Comas Solo", author: "Keith Ferrazzi"}] },
+                { semana: 22, capitulo: 4, titulo: "Refuerzo del Portafolio: Pulir las Joyas de la Corona", descripcion: "Refina tus obras maestras. Aprende a revisar y mejorar proyectos antiguos y a comunicarlos de manera efectiva, como un maestro artesano que refina sus creaciones para una exposición real o un bardo que perfecciona sus canciones para la corte. ¡Los 'Espectros del Estancamiento' deben ser desterrados, porque un verdadero maestro siempre está evolucionando! 'Un diamante en bruto es valioso, pero pulido, es inestimable', diría Oka.", conceptos_chave: ["Refactorización de Código: La Forja de la Elegancia", "Mejora de Visualizaciones: La Iluminación de la Verdad", "Comunicación de Proyectos: La Narrativa del Poder"], herramientas: "Medium, YouTube (opcional)", proyecto: "Desafío Final del Mercado de Héroes: La Exhibición de la Gran Obra. Elige uno de tus proyectos anteriores y mejóralo significativamente (refactoriza el código, mejora las visualizaciones, añade más análisis). Luego, escribe un artículo corto en Medium o graba un video de 2 minutos explicando el proyecto y sus mejoras, como presentar tu magia en un festival para atraer patrocinadores.", youtube_links: [{title: "Cómo Presentar Proyectos de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Consejos para un Portafolio de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "¡Muestra Tu Trabajo!", author: "Austin Kleon"}, {title: "Diseñando Visualizaciones de Datos", author: "Noah Iliinsky & Julie Steele"}] },
+                { semana: 23, capitulo: 5, titulo: "Desafío Final: Proyecto de Portafolio Integral - La Obra Maestra del Mago", descripcion: "La Prueba Final. Integra todas tus habilidades en un proyecto integral que demuestre tu capacidad como analista de datos, tu obra maestra que sellará tu legado. Invoca un 'Monstruo de Datos' (un conjunto de datos grande y complejo) y muestra tu dominio, transformando el caos en orden y sabiduría. 'Este es tu momento de ascensión', proclamaría Oka.", conceptos_chave: ["Análisis de Extremo a Extremo: Del Caos al Orden", "Resolución de Problemas Complejos: Descifrando los Enigmas Reales", "Presentación de Resultados: El Tratado que Convence a Reinos"], herramientas: "Python, SQL, Power BI/Tableau", proyecto: "Desafío Final de la Gran Arena: El Tratado de la Sabiduría para el Rey. Elige un gran conjunto de datos público (por ejemplo, datos de una epidemia, patrones de migración de criaturas, economía de un reino). Realiza un análisis completo: limpieza, consulta con SQL, análisis estadístico, visualización con Python y Power BI/Tableau. Culmina con un dashboard interactivo y un informe detallado en GitHub, como un tratado que convence a reinos enteros a seguir tus consejos.", youtube_links: [{title: "Proyecto de Datos desde Cero", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Ejemplo de Proyecto Final de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Ciencia de Datos desde Cero", author: "Joel Grus"}, {title: "El Arte de la Ciencia de Datos", author: "Roger D. Peng & Elizabeth Matsui"}] },
+                { semana: 24, capitulo: 5, titulo: "Currículum y Aplicaciones: El Pergamino de Presentación", descripcion: "Prepara tus documentos de guerra. Crea un currículum técnico que pase a los guardianes (ATS) y capte la atención de los señores y damas del mercado, como un pergamino de presentación impecable para la corte real. Los 'Guardianes de Reclutamiento' son implacables, pero tu pergamino será un faro de tus habilidades. 'Las primeras impresiones son un hechizo poderoso', enseñaría Oka.", conceptos_chave: ["Currículum Técnico (compatible con ATS): El Mapa de Tus Logros", "Carta de Presentación: La Proclamación de Tu Intención", "Estrategias de Aplicación: La Táctica de Infiltración"], herramientas: "Editor de Texto", proyecto: "Desafío: El Pergamino Optimizado. Crea un currículum de una página optimizado para un puesto de Analista de Datos real o ficticio. Adáptalo para pasar los Sistemas de Seguimiento de Candidatos (ATS) e incluye enlaces a tu GitHub y LinkedIn. Escribe una carta de presentación concisa e impactante.", youtube_links: [{title: "Cómo Hacer un Currículum de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Consejos para Carta de Presentación", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Descifrando la Entrevista de PM", author: "Gayle Laakmann McDowell"}, {title: "El Currículum de Google", author: "Gayle Laakmann McDowell"}] },
+                { semana: 25, capitulo: 5, titulo: "Entrevistas y Más Allá: El Duelo Final por la Maestría", descripcion: "Prepárate para el desafío final: la entrevista. Aprende a demostrar tus habilidades técnicas y de comportamiento, como un campeón defendiendo su honor en la corte o un mago demostrando su maestría en un duelo. ¡Los 'Dragones de la Entrevista' te esperan, pero tu elocuencia y conocimiento serán tus armas! 'La victoria final es tu voz', proclamaría Oka.", conceptos_chave: ["Entrevista Técnica (caso): El Enigma del Dragón", "Entrevista de Comportamiento (STAR): La Crónica de Tus Virtudes", "Explicación de Proyectos: La Narrativa de Tus Logros"], herramientas: "Ninguna (Práctica)", proyecto: "Desafío Final de la Gran Arena: El Duelo con el Dragón. Grábate respondiendo a 3 preguntas comunes de entrevista (un caso técnico, una de comportamiento usando el método STAR y una explicando uno de tus proyectos). Analiza tu desempeño e identifica áreas de mejora para tu próximo duelo.", youtube_links: [{title: "Preparación para Entrevista de Datos", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, {title: "Preguntas de Entrevista de Comportamiento", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}], books_refs: [{title: "Domina la Entrevista de Ciencia de Datos", author: "Nick Singh & Kevin Huo"}, {title: "Secretos de la Entrevista de Casos", author: "Victor Cheng"}] }
+            ]
+        };
+
+        const chapterData = {
+            1: { nome: "Reino de Pythos", icon: '🐍', weeks: [1, 6], realm_intro_key: 'realm_intro_1',
+                hotspot: { top: '35%', left: '15%', width: '20%', height: '25%' } },
+            2: { nome: "Terras de Queryland", icon: '📜', weeks: [7, 12], realm_intro_key: 'realm_intro_2',
+                hotspot: { top: '55%', left: '30%', width: '20%', height: '25%' } },
+            3: { nome: "Torres da Visão e Eficiência", icon: '🔮', weeks: [13, 18], realm_intro_key: 'realm_intro_3',
+                hotspot: { top: '20%', left: '50%', width: '20%', height: '25%' } },
+            4: { nome: "O Mercado dos Heróis", icon: '🛡️', weeks: [19, 22], realm_intro_key: 'realm_intro_4',
+                hotspot: { top: '65%', left: '60%', width: '20%', height: '20%' } },
+            5: { nome: "A Grande Arena", icon: '👑', weeks: [23, 25], realm_intro_key: 'realm_intro_5',
+                hotspot: { top: '10%', left: '75%', width: '15%', height: '20%' } },
+        };
+
+        let currentWeek = null;
+        let completedWeeks = new Set(JSON.parse(localStorage.getItem('completedWeeks') || '[]'));
+        let currentLanguage = localStorage.getItem('currentLanguage') || 'pt';
+
+        // Main content sections
+        const homeSection = document.getElementById('home-section');
+        const avatarCreatorSection = document.getElementById('avatar-creator-section');
+        const progressSection = document.getElementById('progress-section');
+        const mapSection = document.getElementById('map-section');
+        const realmDetailSection = document.getElementById('realm-detail-section'); // New realm detail section
+        const contentDisplaySection = document.getElementById('content-display');
+        const summaryChartsSection = document.getElementById('summary-charts-section');
+
+        const sections = {
+            'home': homeSection,
+            'avatar-creator': avatarCreatorSection,
+            'progress-section': progressSection,
+            'map-section': mapSection,
+            'realm-detail-section': realmDetailSection, // Added realm detail
+            'content-display': contentDisplaySection,
+            'summary-charts-section': summaryChartsSection
+        };
+
+        // Existing elements
+        const detailsContainer = document.getElementById('details-container');
+        const welcomeMessage = document.getElementById('welcome-message');
+        const weekTitle = document.getElementById('week-title');
+        const weekDescription = document.getElementById('week-description');
+        const weekConcepts = document.getElementById('week-concepts');
+        const weekTools = document.getElementById('week-tools');
+        const weekProject = document.getElementById('week-project');
+        const weekYoutubeLinksContainer = document.getElementById('week-youtube-links-container');
+        const weekYoutubeLinks = document.getElementById('week-youtube-links');
+        const weekBooksRefsContainer = document.getElementById('week-books-refs-container');
+        const weekBooksRefs = document.getElementById('week-books-refs');
+        const mapSectionContent = document.getElementById('map-section-content'); // Map image container
+        const realmDetailTitle = document.getElementById('realm-detail-title');
+        const realmDetailDescription = document.getElementById('realm-detail-description');
+        const realmWeeksContainer = document.getElementById('realm-weeks-container');
+        const chapterNav = document.getElementById('chapter-nav');
+        const markCompleteBtn = document.getElementById('markCompleteBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const openLibraryBtn = document.getElementById('openLibraryBtn');
+        const libraryModal = document.getElementById('libraryModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const booksList = document.getElementById('booksList');
+        const startJourneyBtn = document.getElementById('startJourneyBtn');
+
+        // Avatar elements
+        const avatarCanvas = document.getElementById('avatarCanvas');
+        const ctx = avatarCanvas.getContext('2d');
+        const bodyOptions = document.getElementById('body-options');
+        const eyesOptions = document.getElementById('eyes-options');
+        const mouthOptions = document.getElementById('mouth-options');
+        const saveAvatarBtn = document.getElementById('saveAvatarBtn');
+
+        let avatarConfig = {
+            body: 'square',
+            eyes: 'dot',
+            mouth: 'smile'
+        };
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.dataset.key;
+                if (translations[currentLanguage] && translations[currentLanguage][key]) {
+                    element.textContent = translations[currentLanguage][key];
+                }
+            });
+
+            // Update nav buttons
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                const section = tab.dataset.section;
+                const chapter = tab.dataset.chapter;
+                if (section === 'home') tab.textContent = translations[currentLanguage]['Taberna do Viajante'];
+                else if (section === 'avatar-creator') tab.textContent = translations[currentLanguage]['Forja do Herói'];
+                else if (section === 'progress-section') tab.textContent = translations[currentLanguage]['Diário de Bordo'];
+                else if (section === 'map-section') tab.textContent = translations[currentLanguage]['O Grande Mapa dos Reinos'];
+                else if (section === 'summary-charts-section') tab.textContent = translations[currentLanguage]['Oráculo dos Reinos'];
+                else if (chapter && chapterData[chapter]) {
+                    tab.textContent = chapterData[chapter].nome; // Chapter names are part of chapterData
+                }
+            });
+
+            // Re-render charts with new labels
+            if (sections['summary-charts-section'] && !sections['summary-charts-section'].classList.contains('hidden')) {
+                createTopicsChart();
+                createPomodoroChart();
+            }
+
+            // Update current week details if visible
+            if (currentWeek && !contentDisplaySection.classList.contains('hidden')) {
+                renderWeekDetails(currentWeek);
+            }
+
+            // Update realm details if visible
+            if (!realmDetailSection.classList.contains('hidden') && realmDetailSection.dataset.chapter) {
+                renderRealmDetails(parseInt(realmDetailSection.dataset.chapter));
+            }
+
+            updateProgress(); // Update progress text
+            populateLibraryModal(); // Update library modal content
+        }
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('currentLanguage', lang);
+            applyTranslations();
+        }
+
+        function showSection(sectionId, chapterId = null, weekNumber = null) {
+            for (const id in sections) {
+                const sectionElement = sections[id];
+                if (sectionElement) {
+                    sectionElement.classList.add('hidden');
+                }
+            }
+            const targetSectionElement = sections[sectionId];
+            if (targetSectionElement) {
+                targetSectionElement.classList.remove('hidden');
+            }
+
+            if (sectionId === 'content-display') {
+                if (currentWeek) {
+                    if (detailsContainer) detailsContainer.style.display = 'block';
+                    if (welcomeMessage) welcomeMessage.style.display = 'none';
+                } else {
+                    if (detailsContainer) detailsContainer.style.display = 'none';
+                    if (welcomeMessage) welcomeMessage.style.display = 'block';
+                }
+            } else {
+                if (detailsContainer) detailsContainer.style.display = 'none';
+                if (welcomeMessage) welcomeMessage.style.display = 'none';
+            }
+
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active-tab');
+                if (tab.dataset.section === sectionId) {
+                    tab.classList.add('active-tab');
+                }
+                if (sectionId === 'content-display' && chapterId && tab.dataset.chapter == chapterId) {
+                    tab.classList.add('active-tab');
+                }
+            });
+
+            if (sectionId === 'summary-charts-section') {
+                createTopicsChart();
+                createPomodoroChart();
+            }
+        }
+
+        function updateProgress() {
+            const totalWeeks = journeyData[currentLanguage].length;
+            const completedCount = completedWeeks.size;
+            const percentage = (completedCount / totalWeeks) * 100;
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage.toFixed(0)}% ${translations[currentLanguage]['progress_text'].replace('0%', '').replace('(0/25 Semanas)', `(${completedCount}/${totalWeeks} Semanas)`)}`;
+
+            document.querySelectorAll('.map-realm-hotspot').forEach(realmElement => {
+                const chapterNum = parseInt(realmElement.dataset.chapter);
+                const chapterWeeks = chapterData[chapterNum].weeks;
+                const totalChapterWeeks = chapterWeeks[1] - chapterWeeks[0] + 1;
+                let completedChapterWeeks = 0;
+                for (let i = chapterWeeks[0]; i <= chapterWeeks[1]; i++) {
+                    if (completedWeeks.has(i)) {
+                        completedChapterWeeks++;
+                    }
+                }
+                if (completedChapterWeeks === totalChapterWeeks) {
+                    realmElement.classList.add('completed-realm');
+                } else {
+                    realmElement.classList.remove('completed-realm');
+                }
+            });
+
+            document.querySelectorAll('.realm-week-item').forEach(weekItem => {
+                const weekNum = parseInt(weekItem.dataset.week);
+                if (completedWeeks.has(weekNum)) {
+                    weekItem.classList.add('completed');
+                } else {
+                    weekItem.classList.remove('completed');
+                }
+            });
+        }
+
+        function renderWeekDetails(weekNumber) {
+            const weekData = journeyData[currentLanguage].find(w => w.semana === weekNumber);
+            if (!weekData) return;
+            
+            currentWeek = weekNumber;
+            showSection('content-display', weekData.capitulo);
+
+            weekTitle.textContent = `${translations[currentLanguage]['week_title_prefix'] || 'Semana'} ${weekData.semana}: ${weekData.titulo}`;
+            weekDescription.textContent = weekData.descricao;
+            weekConcepts.innerHTML = weekData.conceitos_chave.map(c => `<li>${c}</li>`).join('');
+            weekTools.textContent = weekData.ferramentas;
+            weekProject.textContent = weekData.projeto;
+
+            if (weekData.youtube_links && weekData.youtube_links.length > 0) {
+                weekYoutubeLinksContainer.style.display = 'block';
+                weekYoutubeLinks.innerHTML = weekData.youtube_links.map(link => `<li><a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.title}</a></li>`).join('');
+            } else {
+                weekYoutubeLinksContainer.style.display = 'none';
+            }
+
+            if (weekData.books_refs && weekData.books_refs.length > 0) {
+                weekBooksRefsContainer.style.display = 'block';
+                weekBooksRefs.innerHTML = weekData.books_refs.map(book => `<li>"${book.title}" ${translations[currentLanguage]['by_author'] || 'por'} ${book.author}</li>`).join('');
+            } else {
+                weekBooksRefsContainer.style.display = 'none';
+            }
+
+            markCompleteBtn.onclick = () => toggleWeekCompletion(weekNumber);
+            updateMarkCompleteButtonState(weekNumber);
+            updateMapActiveState(weekData.capitulo);
+        }
+
+        function toggleWeekCompletion(weekNumber) {
+            if (completedWeeks.has(weekNumber)) {
+                completedWeeks.delete(weekNumber);
+            } else {
+                completedWeeks.add(weekNumber);
+            }
+            localStorage.setItem('completedWeeks', JSON.stringify(Array.from(completedWeeks)));
+            updateProgress();
+            updateMarkCompleteButtonState(weekNumber);
+        }
+
+        function updateMarkCompleteButtonState(weekNumber) {
+            if (completedWeeks.has(weekNumber)) {
+                markCompleteBtn.textContent = translations[currentLanguage]['mark_complete_button_unmark'];
+                markCompleteBtn.classList.remove('bg-[var(--color-forest-green)]', 'hover:bg-[#3E6649]');
+                markCompleteBtn.classList.add('bg-[var(--color-soft-grey)]', 'hover:bg-[#5a6b7a]');
+            } else {
+                markCompleteBtn.textContent = translations[currentLanguage]['mark_complete_button'];
+                markCompleteBtn.classList.remove('bg-[var(--color-soft-grey)]', 'hover:bg-[#5a6b7a]');
+                markCompleteBtn.classList.add('bg-[var(--color-forest-green)]', 'hover:bg-[#3E6649]');
+            }
+        }
+
+        function setupMap() {
+            // Set the actual map image as background
+            mapSectionContent.style.backgroundImage = `url('http://googleusercontent.com/file_content/4')`;
+
+            let hotspotsHTML = '';
+            for (const chapterKey in chapterData) {
+                const chapter = chapterData[chapterKey];
+                const hotspotStyle = `top: ${chapter.hotspot.top}; left: ${chapter.hotspot.left}; width: ${chapter.hotspot.width}; height: ${chapter.hotspot.height};`;
+                hotspotsHTML += `
+                    <div class="map-realm-hotspot flex flex-col items-center justify-center" style="${hotspotStyle}" data-chapter="${chapterKey}">
+                        <span class="map-realm-icon">${chapter.icon}</span>
+                        <span class="text-sm md:text-base">${chapter.nome}</span>
+                    </div>
+                `;
+            }
+            mapSectionContent.innerHTML = hotspotsHTML;
+
+            document.querySelectorAll('.map-realm-hotspot').forEach(hotspot => {
+                hotspot.addEventListener('click', () => {
+                    const chapterNum = parseInt(hotspot.dataset.chapter);
+                    renderRealmDetails(chapterNum);
+                });
+            });
+        }
+
+        function updateMapActiveState(chapterNumber) {
+            document.querySelectorAll('.map-realm-hotspot').forEach(hotspot => {
+                if (parseInt(hotspot.dataset.chapter) === chapterNumber) {
+                    hotspot.classList.add('active-realm-hotspot');
+                } else {
+                    hotspot.classList.remove('active-realm-hotspot');
+                }
+            });
+        }
+
+        function renderRealmDetails(chapterNumber) {
+            const chapter = chapterData[chapterNumber];
+            if (!chapter) return;
+
+            showSection('realm-detail-section');
+            realmDetailSection.dataset.chapter = chapterNumber; // Store current chapter for re-render on language switch
+
+            realmDetailTitle.textContent = chapter.nome;
+            realmDetailDescription.textContent = translations[currentLanguage][chapter.realm_intro_key];
+
+            let weeksHTML = '';
+            for (let i = chapter.weeks[0]; i <= chapter.weeks[1]; i++) {
+                const weekData = journeyData[currentLanguage].find(w => w.semana === i);
+                if (weekData) {
+                    weeksHTML += `
+                        <div class="realm-week-item w-full h-16 flex items-center justify-center rounded-md bg-white shadow-md font-bold text-[var(--color-dark-text)] cursor-pointer transition-all duration-200 hover:bg-[var(--color-muted-gold)] hover:text-white" data-week="${i}">
+                            Semana ${i}
+                        </div>
+                    `;
+                }
+            }
+            realmWeeksContainer.innerHTML = weeksHTML;
+
+            document.querySelectorAll('.realm-week-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    renderWeekDetails(parseInt(item.dataset.week));
+                });
+            });
+            updateProgress(); // To show completed weeks in realm detail
+        }
+
+        function setupNav() {
+            // Static nav buttons are already in HTML
+            // Add event listeners for all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetSectionId = tab.dataset.section;
+                    const chapterKey = tab.dataset.chapter;
+                    if (targetSectionId) {
+                        if (chapterKey) { // If it's a chapter button (e.g., from map detail)
+                            renderRealmDetails(parseInt(chapterKey)); // Show realm detail for that chapter
+                        } else { // For home, avatar, progress, map, summary-charts
+                            showSection(targetSectionId);
+                        }
+                    }
+                });
+            });
+        }
+        
+        let topicsChartInstance = null;
+        let pomodoroChartInstance = null;
+
+        function createTopicsChart() {
+            if (topicsChartInstance) topicsChartInstance.destroy();
+            const ctx = document.getElementById('topicsChart').getContext('2d');
+            topicsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        translations[currentLanguage]['Magia de Pythos'] || 'Magia de Pythos',
+                        translations[currentLanguage]['Escrita Rúnica (SQL/Excel)'] || 'Escrita Rúnica (SQL/Excel)',
+                        translations[currentLanguage]['Oráculo Estatístico'] || 'Oráculo Estatístico',
+                        translations[currentLanguage]['Automação Arcane'] || 'Automação Arcane',
+                        translations[currentLanguage]['Lenda do Herói'] || 'Lenda do Herói'
+                    ],
+                    datasets: [{
+                        label: translations[currentLanguage]['focus_by_domain_chart_title'] || 'Foco por Domínio Mágico',
+                        data: [6, 6, 6, 1, 6],
+                        backgroundColor: [
+                            'var(--color-forest-green)', 
+                            'var(--color-earth-brown)', 
+                            'var(--color-muted-gold)', 
+                            'var(--color-dark-text)', 
+                            '#A0522D',
+                        ],
+                        borderColor: 'var(--color-parchment)',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: 'var(--color-dark-text)',
+                                font: {
+                                    family: "'Lato', sans-serif"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createPomodoroChart() {
+            if (pomodoroChartInstance) pomodoroChartInstance.destroy();
+            const ctx = document.getElementById('pomodoroChart').getContext('2d');
+            pomodoroChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [
+                        translations[currentLanguage]['Pythos'] || 'Pythos',
+                        translations[currentLanguage]['Rúnica'] || 'Rúnica',
+                        translations[currentLanguage]['Oráculo'] || 'Oráculo',
+                        translations[currentLanguage]['Automação'] || 'Automação',
+                        translations[currentLanguage]['Lenda'] || 'Lenda'
+                    ],
+                    datasets: [{
+                        label: translations[currentLanguage]['arcane_effort_chart_title'] || 'Esforço Arcane (Pomodoros)',
+                        data: [96, 112, 80, 80, 80],
+                        backgroundColor: 'var(--color-forest-green)',
+                        borderColor: '#3E6649',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                     scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { color: 'var(--color-dark-text)' },
+                            grid: { color: 'rgba(0,0,0,0.05)'}
+                        },
+                        y: {
+                           ticks: { color: 'var(--color-dark-text)' },
+                           grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function populateLibraryModal() {
+            let allBooks = new Map();
+            journeyData[currentLanguage].forEach(week => {
+                if (week.books_refs) {
+                    week.books_refs.forEach(book => {
+                        allBooks.set(`${book.title} - ${book.author}`, book);
+                    });
+                }
+            });
+
+            let sortedBooks = Array.from(allBooks.values()).sort((a, b) => a.title.localeCompare(b.title));
+            
+            booksList.innerHTML = sortedBooks.map(book => `
+                <div class="p-3 bg-[var(--color-parchment)] rounded-md shadow-sm border border-[var(--color-soft-grey)]">
+                    <p class="font-bold text-[var(--color-earth-brown)]">"${book.title}"</p>
+                    <p class="text-sm text-[var(--color-dark-text)]">${translations[currentLanguage]['by_author'] || 'por'} ${book.author}</p>
+                </div>
+            `).join('');
+        }
+
+        // Avatar Drawing Logic
+        function drawAvatar() {
+            ctx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
+            const centerX = avatarCanvas.width / 2;
+            const centerY = avatarCanvas.height / 2;
+
+            // Body
+            ctx.fillStyle = '#A0522D'; // Sienna
+            if (avatarConfig.body === 'square') {
+                ctx.fillRect(centerX - 50, centerY - 50, 100, 100);
+            } else if (avatarConfig.body === 'circle') {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Eyes
+            ctx.fillStyle = '#2F4F4F'; // Dark Slate Gray
+            if (avatarConfig.eyes === 'dot') {
+                ctx.beginPath();
+                ctx.arc(centerX - 20, centerY - 20, 5, 0, Math.PI * 2);
+                ctx.arc(centerX + 20, centerY - 20, 5, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (avatarConfig.eyes === 'line') {
+                ctx.fillRect(centerX - 25, centerY - 22, 15, 4);
+                ctx.fillRect(centerX + 10, centerY - 22, 15, 4);
+            }
+
+            // Mouth
+            ctx.strokeStyle = '#8B0000'; // Dark Red
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            if (avatarConfig.mouth === 'smile') {
+                ctx.arc(centerX, centerY + 20, 20, 0, Math.PI, false);
+            } else if (avatarConfig.mouth === 'straight') {
+                ctx.moveTo(centerX - 20, centerY + 20);
+                ctx.lineTo(centerX + 20, centerY + 20);
+            }
+            ctx.stroke();
+        }
+
+        function setupAvatarControls() {
+            document.querySelectorAll('#body-options .option-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    avatarConfig.body = button.dataset.value;
+                    drawAvatar();
+                    updateOptionButtonState(bodyOptions, button);
+                });
+            });
+            document.querySelectorAll('#eyes-options .option-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    avatarConfig.eyes = button.dataset.value;
+                    drawAvatar();
+                    updateOptionButtonState(eyesOptions, button);
+                });
+            });
+            document.querySelectorAll('#mouth-options .option-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    avatarConfig.mouth = button.dataset.value;
+                    drawAvatar();
+                    updateOptionButtonState(mouthOptions, button);
+                });
+            });
+
+            saveAvatarBtn.addEventListener('click', () => {
+                const dataURL = avatarCanvas.toDataURL('image/png');
+                alert(translations[currentLanguage]['avatar_saved_message'] || 'Avatar salvo! (A imagem foi gerada e poderia ser baixada ou enviada.)');
+                console.log(dataURL);
+            });
+
+            function updateOptionButtonState(container, activeButton) {
+                container.querySelectorAll('.option-button').forEach(btn => {
+                    btn.classList.remove('active-option');
+                });
+                activeButton.classList.add('active-option');
+            }
+            updateOptionButtonState(bodyOptions, bodyOptions.querySelector(`[data-value="${avatarConfig.body}"]`));
+            updateOptionButtonState(eyesOptions, eyesOptions.querySelector(`[data-value="${avatarConfig.eyes}"]`));
+            updateOptionButtonState(mouthOptions, mouthOptions.querySelector(`[data-value="${avatarConfig.mouth}"]`));
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial language and apply translations
+            switchLanguage(currentLanguage);
+
+            setupNav();
+            setupMap();
+            updateProgress();
+            setupAvatarControls();
+            drawAvatar();
+
+            showSection('home'); // Start on the home section
+
+            startJourneyBtn.addEventListener('click', () => {
+                showSection('map-section'); // Navigate to map section
+                document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            openLibraryBtn.addEventListener('click', () => {
+                populateLibraryModal();
+                libraryModal.style.display = 'flex';
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                libraryModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === libraryModal) {
+                    libraryModal.style.display = 'none';
+                }
+            });
+
+            document.querySelectorAll('.lang-switcher').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    switchLanguage(event.target.dataset.lang);
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>
